@@ -10,6 +10,8 @@ fn main() {
         .lines().map(|line| line.expect("Failed to read line").parse::<i32>().expect("failed to parse line as number")).collect();
     let (a, b) = find_first_pair_with_sum(input.as_slice(), TARGET_SUM).expect("No pair found");
     println!("{} * {} = {}", a, b, a * b);
+    let (a, b, c) = find_first_triplet_with_sum(&input, TARGET_SUM).expect("No triplet found");
+    println!("{} * {} * {} = {}", a, b, c, a*b*c);
 }
 
 fn find_first_pair_with_sum(numbers: &[i32], sum: i32) -> Option<(i32, i32)> {
@@ -22,6 +24,10 @@ fn find_first_pair_with_sum(numbers: &[i32], sum: i32) -> Option<(i32, i32)> {
         seen.insert(number);
     }
     None
+}
+
+fn find_first_triplet_with_sum(numbers: &[i32], sum: i32) -> Option<(i32,i32,i32)> {
+    numbers.iter().find_map(|number| find_first_pair_with_sum(numbers, sum-*number).map(|(a,b)| (*number, a, b)))
 }
 
 #[cfg(test)]
@@ -41,5 +47,9 @@ mod tests {
         assert_eq!(find_first_pair_with_sum(EXAMPLE_INPUT, TARGET_SUM), Some((1721, 299)));
     }
 
+    #[test]
+    fn find_first_triplet_for_sum() {
+        assert_eq!(find_first_triplet_with_sum(EXAMPLE_INPUT, TARGET_SUM), Some((979, 366, 675)))
+    }
 }
 
