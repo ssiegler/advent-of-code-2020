@@ -1,14 +1,12 @@
-use std::fs::{File};
-use std::io::{BufRead, BufReader};
 use std::collections::HashSet;
+use advent_of_code::read_numbers_from_file;
+use std::path::Path;
 
 const TARGET_SUM: i32 = 2020;
 
 fn main() {
-    let input = File::open("inputs/day1.txt").expect("Failed to open input file");
-    let input : Vec<i32> = BufReader::new(input)
-        .lines().map(|line| line.expect("Failed to read line").parse::<i32>().expect("failed to parse line as number")).collect();
-    let (a, b) = find_first_pair_with_sum(input.as_slice(), TARGET_SUM).expect("No pair found");
+    let input = read_numbers_from_file(Path::new("inputs/day1.txt"));
+    let (a, b) = find_first_pair_with_sum(&input, TARGET_SUM).expect("No pair found");
     println!("{} * {} = {}", a, b, a * b);
     let (a, b, c) = find_first_triplet_with_sum(&input, TARGET_SUM).expect("No triplet found");
     println!("{} * {} * {} = {}", a, b, c, a*b*c);
