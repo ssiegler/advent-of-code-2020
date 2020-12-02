@@ -9,9 +9,7 @@ use advent_of_code::read_from_file;
 fn main() {
     let mut valid_count = 0;
     let mut officially_valid_count = 0;
-    for password in read_from_file(Path::new("inputs/day2.txt"), |line| {
-        line.parse::<Password>()
-    }) {
+    for password in read_from_file::<Password>(Path::new("inputs/day2.txt")) {
         if password.is_valid() {
             valid_count += 1;
         }
