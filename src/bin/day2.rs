@@ -2,8 +2,14 @@ use std::str::FromStr;
 
 use anyhow::anyhow;
 use anyhow::{Context, Result};
+use advent_of_code::read_from_file;
+use std::path::Path;
 
-fn main() {}
+fn main() {
+    let valid_count = read_from_file(Path::new("inputs/day2.txt"), |line| line.parse::<Password>())
+        .filter(|password| password.is_valid()).count();
+    println!("Got {} valid passwords", valid_count);
+}
 
 #[derive(Debug, Eq, PartialEq)]
 struct Password {
