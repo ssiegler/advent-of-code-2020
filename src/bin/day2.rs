@@ -1,11 +1,9 @@
 use std::str::FromStr;
 
-use anyhow::{Context, Result};
 use anyhow::anyhow;
+use anyhow::{Context, Result};
 
-fn main() {
-
-}
+fn main() {}
 
 #[derive(Debug, Eq, PartialEq)]
 struct Password {
@@ -49,23 +47,23 @@ impl FromStr for Password {
         }
         let cap = RE
             .captures(input)
-            .ok_or(anyhow!("Password syntax mismatch: '{}'", input))?;
+            .ok_or_else(|| anyhow!("Password syntax mismatch: '{}'", input))?;
         let (min, max, letter, password) = (
             cap.name("min")
-                .ok_or(anyhow!("Missing 'min'"))?
+                .ok_or_else(|| anyhow!("Missing 'min'"))?
                 .as_str()
                 .parse::<usize>()
                 .with_context(|| format!("Parsing 'min' in '{}'", input))?,
             cap.name("max")
-                .ok_or(anyhow!("Missing 'max'"))?
+                .ok_or_else(|| anyhow!("Missing 'max'"))?
                 .as_str()
                 .parse::<usize>()
                 .with_context(|| format!("Parsing 'max' in '{}'", input))?,
             cap.name("letter")
                 .and_then(|letter| letter.as_str().chars().next())
-                .ok_or(anyhow!("Missing 'letter'"))?,
+                .ok_or_else(|| anyhow!("Missing 'letter'"))?,
             cap.name("password")
-                .ok_or(anyhow!("Missing 'password'"))?
+                .ok_or_else(|| anyhow!("Missing 'password'"))?
                 .as_str()
                 .to_string(),
         );
