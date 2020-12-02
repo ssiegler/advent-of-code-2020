@@ -1,14 +1,26 @@
+use std::path::Path;
 use std::str::FromStr;
 
 use anyhow::anyhow;
 use anyhow::{Context, Result};
+
 use advent_of_code::read_from_file;
-use std::path::Path;
 
 fn main() {
-    let valid_count = read_from_file(Path::new("inputs/day2.txt"), |line| line.parse::<Password>())
-        .filter(|password| password.is_valid()).count();
+    let mut valid_count = 0;
+    let mut officially_valid_count = 0;
+    for password in read_from_file(Path::new("inputs/day2.txt"), |line| {
+        line.parse::<Password>()
+    }) {
+        if password.is_valid() {
+            valid_count += 1;
+        }
+        if password.is_officially_valid() {
+            officially_valid_count += 1;
+        }
+    }
     println!("Got {} valid passwords", valid_count);
+    println!("Got {} officially valid passwords", officially_valid_count);
 }
 
 #[derive(Debug, Eq, PartialEq)]
@@ -27,6 +39,23 @@ impl Password {
             .filter(|ch| *ch == self.letter)
             .count();
         count >= self.min && count <= self.max
+    }
+
+    fn is_officially_valid(&self) -> bool {
+        match (
+            self.password
+                .chars()
+                .nth(self.min - 1)
+                .map(|ch| ch == self.letter),
+            self.password
+                .chars()
+                .nth(self.max - 1)
+                .map(|ch| ch == self.letter),
+        ) {
+            (Some(true), Some(false)) => true,
+            (Some(false), Some(true)) => true,
+            _ => false,
+        }
     }
 }
 
@@ -94,28 +123,54 @@ mod tests {
                 min: 1,
                 max: 3,
                 letter: 'b',
-                password: "cdefg".to_string()
+                password: "cdefg".to_string(),
             }
         );
         Ok(())
     }
 
+    fn example_input() -> Vec<Password> {
+        vec![
+            Password {
+                min: 1,
+                max: 3,
+                letter: 'a',
+                password: "abcde".to_string(),
+            },
+            Password {
+                min: 1,
+                max: 3,
+                letter: 'b',
+                password: "cdefg".to_string(),
+            },
+            Password {
+                min: 2,
+                max: 9,
+                letter: 'c',
+                password: "ccccccccc".to_string(),
+            },
+        ]
+    }
+
     #[test]
     fn validates_passwords() {
-        let passwords: Vec<Password> = "1-3 a: abcde
-1-3 b: cdefg
-2-9 c: ccccccccc"
-            .lines()
-            .map(|line| line.parse::<Password>())
-            .collect::<Result<Vec<Password>, _>>()
-            .expect("");
-
         assert_eq!(
-            passwords
+            example_input()
                 .iter()
-                .filter(|password| password.is_valid())
-                .count(),
-            2
+                .map(|password| password.is_valid())
+                .collect::<Vec<_>>(),
+            &[true, false, true]
         )
+    }
+
+    #[test]
+    fn validates_passwords_officially() {
+        assert_eq!(
+            example_input()
+                .iter()
+                .map(|password| password.is_officially_valid())
+                .collect::<Vec<_>>(),
+            &[true, false, false]
+        );
     }
 }
