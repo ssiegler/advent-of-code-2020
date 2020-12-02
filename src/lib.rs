@@ -2,9 +2,9 @@ use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::Path;
 
-pub fn read_from_file<T, F, E>(path: &Path, parse: F) -> Vec<T>
+pub fn read_from_file<T, F, E>(path: &Path, parse: F) -> impl Iterator<Item = T> + '_
 where
-    F: Fn(&str) -> Result<T, E>,
+    F: Fn(&str) -> Result<T, E> + 'static,
 {
     let input = File::open(path).expect("Failed to open input file");
     BufReader::new(input)
@@ -12,14 +12,13 @@ where
         .map(|line| line.expect("Failed to read line"))
         .enumerate()
         .filter(|(_, line)| !line.is_empty())
-        .map(|(index, line)| {
+        .map(move |(index, line)| {
             parse(&line).unwrap_or_else(|_| panic!("failed to parse line {}: '{:?}'", index, &line))
         })
-        .collect()
 }
 
 pub fn read_numbers_from_file(path: &Path) -> Vec<i32> {
-    read_from_file(path, |str| str.parse())
+    read_from_file(path, |str| str.parse()).collect()
 }
 
 #[cfg(test)]
