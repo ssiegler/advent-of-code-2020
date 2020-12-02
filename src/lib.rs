@@ -2,18 +2,24 @@ use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::Path;
 
-pub fn read_numbers_from_file(path: &Path) -> Vec<i32> {
+pub fn read_from_file<T, F, E>(path: &Path, parse: F) -> Vec<T>
+where
+    F: Fn(&str) -> Result<T, E>,
+{
     let input = File::open(path).expect("Failed to open input file");
-    let input: Vec<i32> = BufReader::new(input)
+    BufReader::new(input)
         .lines()
         .map(|line| line.expect("Failed to read line"))
-        .filter(|line| !line.is_empty())
-        .map(|line| {
-            line.parse::<i32>()
-                .unwrap_or_else(|_| panic!("failed to parse line as number: {:?}", &line))
+        .enumerate()
+        .filter(|(_, line)| !line.is_empty())
+        .map(|(index, line)| {
+            parse(&line).unwrap_or_else(|_| panic!("failed to parse line {}: '{:?}'", index, &line))
         })
-        .collect();
-    input
+        .collect()
+}
+
+pub fn read_numbers_from_file(path: &Path) -> Vec<i32> {
+    read_from_file(path, |str| str.parse())
 }
 
 #[cfg(test)]
