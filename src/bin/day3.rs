@@ -9,21 +9,16 @@ const SLOPES: &[Slope] = &[
 ];
 
 fn main() {
-    let tree_count = count_trees(
-        read_lines("inputs/day3.txt".as_ref()),
-        &SLOPES[1],
-    );
+    let tree_count = count_trees(read_lines("inputs/day3.txt".as_ref()), &SLOPES[1]);
     println!("Encountered {} trees", tree_count);
-    let answer: usize = SLOPES.iter().map(|slope| count_trees(
-        read_lines("inputs/day3.txt".as_ref()),
-        slope)).product();
+    let answer: usize = SLOPES
+        .iter()
+        .map(|slope| count_trees(read_lines("inputs/day3.txt".as_ref()), slope))
+        .product();
     println!("Product of encountered trees: {}", answer);
 }
 
-fn count_trees<T>(tree_rows: impl Iterator<Item = T>, slope: &Slope) -> usize
-where
-    T: AsRef<str>,
-{
+fn count_trees(tree_rows: impl Iterator<Item = impl AsRef<str>>, slope: &Slope) -> usize {
     tree_rows
         .step_by(slope.down)
         .enumerate()
