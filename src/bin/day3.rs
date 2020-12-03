@@ -9,9 +9,9 @@ const SLOPES: &[Slope] = &[
 ];
 
 fn main() {
-    let tree_count: usize = count_trees(
+    let tree_count = count_trees(
         read_lines("inputs/day3.txt".as_ref()),
-        &Slope { right: 3, down: 1 },
+        &SLOPES[1],
     );
     println!("Encountered {} trees", tree_count);
     let answer: usize = SLOPES.iter().map(|slope| count_trees(
