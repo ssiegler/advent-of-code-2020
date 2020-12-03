@@ -1,8 +1,12 @@
+use std::error::Error;
 use std::path::Path;
 use std::str::FromStr;
 
 use anyhow::anyhow;
 use anyhow::{Context, Result};
+use lazy_static::lazy_static;
+use regex::Captures;
+use regex::Regex;
 
 use advent_of_code::read_from_file;
 
@@ -61,9 +65,6 @@ impl FromStr for Password {
     type Err = anyhow::Error;
 
     fn from_str(input: &str) -> Result<Self, Self::Err> {
-        use lazy_static::lazy_static;
-        use regex::Regex;
-
         lazy_static! {
             static ref RE: Regex = Regex::new(
                 r"(?x)
@@ -82,23 +83,10 @@ impl FromStr for Password {
             .captures(input)
             .ok_or_else(|| anyhow!("Password syntax mismatch: '{}'", input))?;
         let (min, max, letter, password) = (
-            cap.name("min")
-                .ok_or_else(|| anyhow!("Missing 'min'"))?
-                .as_str()
-                .parse::<usize>()
-                .with_context(|| format!("Parsing 'min' in '{}'", input))?,
-            cap.name("max")
-                .ok_or_else(|| anyhow!("Missing 'max'"))?
-                .as_str()
-                .parse::<usize>()
-                .with_context(|| format!("Parsing 'max' in '{}'", input))?,
-            cap.name("letter")
-                .and_then(|letter| letter.as_str().chars().next())
-                .ok_or_else(|| anyhow!("Missing 'letter'"))?,
-            cap.name("password")
-                .ok_or_else(|| anyhow!("Missing 'password'"))?
-                .as_str()
-                .to_string(),
+            from_named(&cap, "min")?,
+            from_named(&cap, "max")?,
+            from_named(&cap, "letter")?,
+            from_named(&cap, "password")?,
         );
         Ok(Password {
             min,
@@ -107,6 +95,24 @@ impl FromStr for Password {
             password,
         })
     }
+}
+
+fn from_named<T>(cap: &Captures, name: &str) -> Result<T>
+where
+    T: FromStr,
+    <T as FromStr>::Err: Send + Sync + Error + 'static,
+{
+    cap.name(name)
+        .ok_or_else(|| anyhow!("Missing '{}' in {}", name, cap.get(0).unwrap().as_str()))?
+        .as_str()
+        .parse()
+        .with_context(|| {
+            format!(
+                "Failed to parse '{}' in '{}'",
+                name,
+                cap.get(0).unwrap().as_str()
+            )
+        })
 }
 
 #[cfg(test)]
