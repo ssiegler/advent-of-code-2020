@@ -3,14 +3,18 @@ use std::io::{BufRead, BufReader};
 use std::path::Path;
 use std::str::FromStr;
 
-pub fn read_from_file<T>(path: &Path) -> impl Iterator<Item = T> + '_
-where
-    T: FromStr,
-{
+pub fn read_lines(path: &Path) -> impl Iterator<Item = String> {
     let input = File::open(path).expect("Failed to open input file");
     BufReader::new(input)
         .lines()
         .map(|line| line.expect("Failed to read line"))
+}
+
+pub fn read_from_file<T>(path: &Path) -> impl Iterator<Item = T> + '_
+where
+    T: FromStr,
+{
+    read_lines(path)
         .enumerate()
         .filter(|(_, line)| !line.is_empty())
         .map(|(index, line)| {
