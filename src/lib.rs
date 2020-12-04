@@ -3,14 +3,14 @@ use std::io::{BufRead, BufReader};
 use std::path::Path;
 use std::str::FromStr;
 
-pub fn read_lines(path: &Path) -> impl Iterator<Item = String> {
+pub fn read_lines(path: impl AsRef<Path>) -> impl Iterator<Item = String> {
     let input = File::open(path).expect("Failed to open input file");
     BufReader::new(input)
         .lines()
         .map(|line| line.expect("Failed to read line"))
 }
 
-pub fn read_from_file<T>(path: &Path) -> impl Iterator<Item = T> + '_
+pub fn read_from_file<T>(path: impl AsRef<Path>) -> impl Iterator<Item = T>
 where
     T: FromStr,
 {
@@ -23,7 +23,7 @@ where
         })
 }
 
-pub fn read_numbers_from_file(path: &Path) -> Vec<i32> {
+pub fn read_numbers_from_file(path: impl AsRef<Path>) -> Vec<i32> {
     read_from_file(path).collect()
 }
 

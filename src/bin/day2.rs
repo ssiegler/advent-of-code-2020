@@ -1,5 +1,4 @@
 use std::error::Error;
-use std::path::Path;
 use std::str::FromStr;
 
 use anyhow::anyhow;
@@ -11,16 +10,15 @@ use regex::Regex;
 use advent_of_code::read_from_file;
 
 fn main() {
-    let mut valid_count = 0;
-    let mut officially_valid_count = 0;
-    for password in read_from_file::<Password>(Path::new("inputs/day2.txt")) {
-        if password.is_valid() {
-            valid_count += 1;
-        }
-        if password.is_officially_valid() {
-            officially_valid_count += 1;
-        }
-    }
+    let passwords: Vec<Password> = read_from_file("inputs/day2.txt").collect();
+    let valid_count = passwords
+        .iter()
+        .filter(|password| password.is_valid())
+        .count();
+    let officially_valid_count = passwords
+        .iter()
+        .filter(|password| password.is_officially_valid())
+        .count();
     println!("Got {} valid passwords", valid_count);
     println!("Got {} officially valid passwords", officially_valid_count);
 }
