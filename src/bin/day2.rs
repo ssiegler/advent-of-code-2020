@@ -10,7 +10,7 @@ use regex::Regex;
 use advent_of_code::read_from_file;
 
 fn main() {
-    let passwords: Vec<Password> = read_from_file("inputs/day2.txt").collect();
+    let passwords: Vec<Password> = read_from_file("day02/input.txt").collect();
     let valid_count = passwords
         .iter()
         .filter(|password| password.is_valid())

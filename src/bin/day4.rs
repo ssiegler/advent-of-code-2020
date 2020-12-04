@@ -6,7 +6,7 @@ use lazy_static::lazy_static;
 use regex::Regex;
 
 fn main() {
-    let input = std::fs::read_to_string("inputs/day4.txt").expect("Failed to read input");
+    let input = std::fs::read_to_string("day04/input.txt").expect("Failed to read input");
     let passports_with_required_fields: Vec<Passport> =
         read_passports(&input).filter(has_required_fields).collect();
     println!(
