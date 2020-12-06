@@ -1,11 +1,11 @@
 use anyhow::Result;
 use std::io::{BufRead, BufReader, Read};
 
-use itertools::__std_iter::FromIterator;
 use itertools::{process_results, Itertools};
 use std::collections::HashSet;
 use std::fmt::Display;
 use std::fs::File;
+use std::iter::FromIterator;
 
 fn main() {
     let groups = read_groups(File::open("inputs/day06.txt").expect("Failed to open input"))
