@@ -33,20 +33,6 @@ fn read_groups(input: impl Read) -> Result<Vec<Vec<String>>> {
     .map_err(anyhow::Error::from)
 }
 
-fn summed_group_answers(input: impl Read) -> Result<usize> {
-    let input = BufReader::new(input).lines();
-    process_results(input, |results| {
-        results
-            .peekable()
-            .batching(|lines| match lines.peek() {
-                Some(_) => Some(count_any_yes(lines.take_while(|line| !line.is_empty()))),
-                None => None,
-            })
-            .sum()
-    })
-    .map_err(anyhow::Error::from)
-}
-
 fn count_any_yes<I>(mut group: I) -> usize
 where
     I: Iterator,
@@ -63,7 +49,7 @@ where
     group
         .map(|answers| HashSet::from_iter(answers.as_ref().chars()))
         .fold1(|a, b| a.intersection(&b).cloned().collect())
-        .unwrap_or(HashSet::new())
+        .unwrap_or_else(HashSet::new)
         .len()
 }
 
@@ -111,6 +97,11 @@ a
 a
 
 b";
-        assert_eq!(summed_group_answers(input.as_bytes()).unwrap(), 11);
+        let count: usize = read_groups(input.as_bytes())
+            .unwrap()
+            .iter()
+            .map(|group| count_any_yes(group.iter()))
+            .sum();
+        assert_eq!(count, 11);
     }
 }
