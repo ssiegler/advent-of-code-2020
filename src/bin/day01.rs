@@ -4,7 +4,7 @@ use itertools::Itertools;
 const TARGET_SUM: i32 = 2020;
 
 fn main() {
-    let input = read_numbers_from_file("day01/input.txt");
+    let input = read_numbers_from_file("inputs/day01.txt");
     let (a, b) = find_first_pair_with_sum(&input, TARGET_SUM).expect("No pair found");
     println!("{} * {} = {}", a, b, a * b);
     let (a, b, c) = find_first_triplet_with_sum(&input, TARGET_SUM).expect("No triplet found");

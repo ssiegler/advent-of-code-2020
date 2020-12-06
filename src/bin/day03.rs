@@ -9,11 +9,11 @@ const SLOPES: &[Slope] = &[
 ];
 
 fn main() {
-    let tree_count = count_trees(read_lines("day03/input.txt"), &SLOPES[1]);
+    let tree_count = count_trees(read_lines("inputs/day03.txt"), &SLOPES[1]);
     println!("Encountered {} trees", tree_count);
     let answer: usize = SLOPES
         .iter()
-        .map(|slope| count_trees(read_lines("day03/input.txt"), slope))
+        .map(|slope| count_trees(read_lines("inputs/day03.txt"), slope))
         .product();
     println!("Product of encountered trees: {}", answer);
 }
