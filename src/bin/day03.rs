@@ -62,7 +62,7 @@ mod tests {
     }
 
     #[test]
-    fn encountered_trees_with_scopes_in_example() {
+    fn encountered_trees_with_slopes_in_example() {
         let tree_counts: Vec<usize> = SLOPES
             .iter()
             .map(|slope| count_trees(EXAMPLE_INPUT.lines(), slope))
