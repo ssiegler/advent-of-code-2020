@@ -1,16 +1,28 @@
 use advent_of_code::read_from_file;
 use anyhow::anyhow;
 use anyhow::{Context, Result};
+use itertools::Itertools;
 use lazy_static::lazy_static;
 use regex::{Captures, Regex};
 use std::str::FromStr;
 
 fn main() {
-    let maximum_seat_id = read_from_file("inputs/day05.txt")
+    let seat_ids: Vec<u32> = read_from_file("inputs/day05.txt")
         .map(|seat: Seat| seat.seat_id())
-        .max()
-        .expect("No input?");
-    println!("Maximum seat id: {}", maximum_seat_id);
+        .sorted()
+        .collect();
+    println!("Maximum seat id: {}", seat_ids.last().expect("No seats"));
+    let misssing_seat_id = seat_ids
+        .windows(2)
+        .find_map(|pair| {
+            if pair[0] + 1 == pair[1] - 1 {
+                Some(pair[0] + 1)
+            } else {
+                None
+            }
+        })
+        .expect("No seat missing");
+    println!("Missing seat id: {}", misssing_seat_id);
 }
 
 #[derive(Eq, PartialEq, Debug)]
