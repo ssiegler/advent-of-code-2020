@@ -8,10 +8,29 @@ use std::fmt::Display;
 use std::fs::File;
 
 fn main() {
-    let answer_sum =
-        summed_group_answers(File::open("inputs/day06.txt").expect("Failed to open input"))
-            .expect("Failed to read input");
-    println!("Got sum of group counts: {}", answer_sum);
+    let groups = read_groups(File::open("inputs/day06.txt").expect("Failed to open input"))
+        .expect("Failed to read input");
+    let any_yes_sum: usize = groups.iter().map(|group| count_any_yes(group.iter())).sum();
+    println!("Got sum of any yes per group: {}", any_yes_sum);
+    let agreements_sum: usize = groups
+        .iter()
+        .map(|group| count_agreements(group.iter()))
+        .sum();
+    println!("Got sum of agreements per group: {}", agreements_sum);
+}
+
+fn read_groups(input: impl Read) -> Result<Vec<Vec<String>>> {
+    let input = BufReader::new(input).lines();
+    process_results(input, |results| {
+        results
+            .peekable()
+            .batching(|lines| match lines.peek() {
+                Some(_) => Some(lines.take_while(|line| !line.is_empty()).collect_vec()),
+                None => None,
+            })
+            .collect_vec()
+    })
+    .map_err(anyhow::Error::from)
 }
 
 fn summed_group_answers(input: impl Read) -> Result<usize> {
