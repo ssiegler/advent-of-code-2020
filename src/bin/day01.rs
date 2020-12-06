@@ -1,4 +1,5 @@
 use advent_of_code::read_numbers_from_file;
+use itertools::Itertools;
 
 const TARGET_SUM: i32 = 2020;
 
@@ -10,20 +11,18 @@ fn main() {
     println!("{} * {} * {} = {}", a, b, c, a * b * c);
 }
 
-fn find(numbers: &[i32], needle: i32) -> Option<i32> {
-    numbers.iter().find(|number| **number == needle).cloned()
+fn find_first_pair_with_sum(numbers: &[i32], sum: i32) -> Option<(&i32, &i32)> {
+    numbers
+        .iter()
+        .tuple_combinations()
+        .find(|(a, b)| *a + *b == sum)
 }
 
-fn find_first_pair_with_sum(numbers: &[i32], sum: i32) -> Option<(i32, i32)> {
-    numbers.iter().enumerate().find_map(|(index, &number)| {
-        find(&numbers[index..], sum - number).map(|candidate| (number, candidate))
-    })
-}
-
-fn find_first_triplet_with_sum(numbers: &[i32], sum: i32) -> Option<(i32, i32, i32)> {
-    numbers.iter().enumerate().find_map(|(index, &number)| {
-        find_first_pair_with_sum(&numbers[index..], sum - number).map(|(a, b)| (number, a, b))
-    })
+fn find_first_triplet_with_sum(numbers: &[i32], sum: i32) -> Option<(&i32, &i32, &i32)> {
+    numbers
+        .iter()
+        .tuple_combinations()
+        .find(|(a, b, c)| *a + *b + *c == sum)
 }
 
 #[cfg(test)]
@@ -36,7 +35,7 @@ mod tests {
     fn finds_first_pair_for_sum() {
         assert_eq!(
             find_first_pair_with_sum(EXAMPLE_INPUT, TARGET_SUM),
-            Some((1721, 299))
+            Some((&1721, &299))
         );
     }
 
@@ -44,7 +43,7 @@ mod tests {
     fn find_first_triplet_for_sum() {
         assert_eq!(
             find_first_triplet_with_sum(EXAMPLE_INPUT, TARGET_SUM),
-            Some((979, 366, 675))
+            Some((&979, &366, &675))
         )
     }
 }
