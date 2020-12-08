@@ -2,6 +2,7 @@
 mod puzzle;
 
 mod day01;
+mod day02;
 
 use std::fs::File;
 use std::io::{BufRead, BufReader};
