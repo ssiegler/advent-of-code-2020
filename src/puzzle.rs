@@ -1,17 +1,9 @@
-use std::fmt::Debug;
 use std::ops::Deref;
-use std::path::Path;
 use std::str::FromStr;
-use thiserror::Error;
 
 pub trait Puzzle: FromStr {
     fn solve_part1(&self) -> String;
     fn solve_part2(&self) -> String;
-}
-
-pub fn load<T: FromStr>(path: impl AsRef<Path>) -> Result<T, LoadError> {
-    let input = std::fs::read_to_string(path)?;
-    input.parse().map_err(|_| LoadError::InvalidInput)
 }
 
 pub struct Input<T>(T);
@@ -37,14 +29,6 @@ impl<T: FromStr> FromStr for Input<Vec<T>> {
     }
 }
 
-#[derive(Error, Debug)]
-pub enum LoadError {
-    #[error("Error reading from input file")]
-    ReadFailed(#[from] std::io::Error),
-    #[error("Error parsing puzzle input")]
-    InvalidInput,
-}
-
 macro_rules! test_puzzle {
     ($type:ty;
         Example($example_input:literal, $ex_part1:literal, $ex_part2:literal),
@@ -58,9 +42,11 @@ macro_rules! test_puzzle {
             lazy_static! {
                 static ref EXAMPLE: $type = $example_input
                     .parse::<$type>()
-                    .expect("Failed to read example");
-                static ref PUZZLE: $type =
-                    $crate::puzzle::load($path).expect("Failed to load input");
+                    .expect("Failed to parse example");
+                static ref PUZZLE: $type = std::fs::read_to_string($path)
+                    .expect("Failed to read input")
+                    .parse::<$type>()
+                    .expect("Failed to parse input");
             }
 
             #[test]
