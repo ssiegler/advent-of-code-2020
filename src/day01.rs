@@ -1,4 +1,4 @@
-use crate::puzzle::{load, Input, Puzzle};
+use crate::puzzle::{Input, Puzzle};
 use itertools::Itertools;
 
 type Day01 = Input<Vec<i32>>;
@@ -31,41 +31,14 @@ impl Puzzle for Day01 {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use lazy_static::lazy_static;
-
-    lazy_static! {
-        static ref EXAMPLE: Day01 = "\
+test_puzzle! {
+    Day01;
+    Example("\
 1721
 979
 366
 299
 675
-1456"
-            .parse()
-            .expect("Failed to parse example");
-        static ref PUZZLE: Day01 = load("inputs/day01.txt").expect("Error loading puzzle input");
-    }
-
-    #[test]
-    fn solves_example_part1() {
-        assert_eq!(EXAMPLE.solve_part1(), "514579")
-    }
-
-    #[test]
-    fn solves_part1() {
-        assert_eq!(PUZZLE.solve_part1(), "751776");
-    }
-
-    #[test]
-    fn solves_example_part2() {
-        assert_eq!(EXAMPLE.solve_part2(), "241861950");
-    }
-
-    #[test]
-    fn solves_part2() {
-        assert_eq!(PUZZLE.solve_part2(), "42275090");
-    }
+1456", 514579, 241861950),
+    File("inputs/day01.txt", 751776, 42275090)
 }

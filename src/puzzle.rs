@@ -1,3 +1,4 @@
+use std::fmt::Debug;
 use std::ops::Deref;
 use std::path::Path;
 use std::str::FromStr;
@@ -42,4 +43,42 @@ pub enum LoadError {
     ReadFailed(#[from] std::io::Error),
     #[error("Error parsing puzzle input")]
     InvalidInput,
+}
+
+macro_rules! test_puzzle {
+    ($type:ty;
+        Example($example_input:literal, $ex_part1:literal, $ex_part2:literal),
+        File($path:literal, $part1:literal, $part2:literal)
+    ) => {
+        #[cfg(test)]
+        mod tests {
+            use super::*;
+            use lazy_static::lazy_static;
+
+            lazy_static! {
+                static ref EXAMPLE: $type = $example_input
+                    .parse::<$type>()
+                    .expect("Failed to read example");
+                static ref PUZZLE: $type =
+                    $crate::puzzle::load($path).expect("Failed to load input");
+            }
+
+            #[test]
+            fn solves_example_part1() {
+                assert_eq!(EXAMPLE.solve_part1(), $ex_part1.to_string())
+            }
+            #[test]
+            fn solves_example_part2() {
+                assert_eq!(EXAMPLE.solve_part2(), $ex_part2.to_string())
+            }
+            #[test]
+            fn solves_part1() {
+                assert_eq!(PUZZLE.solve_part1(), $part1.to_string())
+            }
+            #[test]
+            fn solves_part2() {
+                assert_eq!(PUZZLE.solve_part2(), $part2.to_string())
+            }
+        }
+    };
 }

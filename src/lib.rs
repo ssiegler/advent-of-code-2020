@@ -1,5 +1,7 @@
-mod day01;
+#[macro_use]
 mod puzzle;
+
+mod day01;
 
 use std::fs::File;
 use std::io::{BufRead, BufReader};
