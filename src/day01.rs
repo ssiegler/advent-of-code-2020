@@ -1,4 +1,4 @@
-use crate::puzzle::{Input, Puzzle};
+use crate::puzzle::{load, Input, Puzzle};
 use itertools::Itertools;
 
 type Day01 = Input<Vec<i32>>;
@@ -46,9 +46,9 @@ mod tests {
 1456"
             .parse()
             .expect("Failed to parse example");
-        static ref PUZZLE: Day01 =
-            Day01::load("inputs/day01.txt").expect("Error loading puzzle input");
+        static ref PUZZLE: Day01 = load("inputs/day01.txt").expect("Error loading puzzle input");
     }
+
     #[test]
     fn solves_example_part1() {
         assert_eq!(EXAMPLE.solve_part1(), "514579")

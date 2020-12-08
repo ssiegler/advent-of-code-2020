@@ -6,14 +6,11 @@ use thiserror::Error;
 pub trait Puzzle: FromStr {
     fn solve_part1(&self) -> String;
     fn solve_part2(&self) -> String;
+}
 
-    fn load(path: impl AsRef<Path>) -> Result<Self, PuzzleError>
-    where
-        Self: Sized,
-    {
-        let input = std::fs::read_to_string(path)?;
-        input.parse().map_err(|_| PuzzleError::InvalidInput)
-    }
+pub fn load<T: FromStr>(path: impl AsRef<Path>) -> Result<T, LoadError> {
+    let input = std::fs::read_to_string(path)?;
+    input.parse().map_err(|_| LoadError::InvalidInput)
 }
 
 pub struct Input<T>(T);
@@ -40,7 +37,7 @@ impl<T: FromStr> FromStr for Input<Vec<T>> {
 }
 
 #[derive(Error, Debug)]
-pub enum PuzzleError {
+pub enum LoadError {
     #[error("Error reading from input file")]
     ReadFailed(#[from] std::io::Error),
     #[error("Error parsing puzzle input")]
