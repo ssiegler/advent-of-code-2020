@@ -1,4 +1,3 @@
-use crate::day02::PasswordError::{InvalidField, MissingField, RecordMismatch};
 use crate::puzzle::{Lines, Puzzle};
 use lazy_static::lazy_static;
 use regex::{Captures, Regex};
@@ -79,7 +78,7 @@ impl FromStr for Password {
         }
         let cap = RE
             .captures(input)
-            .ok_or_else(|| RecordMismatch(input.to_string()))?;
+            .ok_or_else(|| PasswordError::RecordMismatch(input.to_string()))?;
         let (min, max, letter, password) = (
             from_named(&cap, "min")?,
             from_named(&cap, "max")?,
@@ -98,9 +97,9 @@ impl FromStr for Password {
 fn from_named<T: FromStr>(cap: &Captures, name: &str) -> Result<T, PasswordError> {
     let value = cap
         .name(name)
-        .ok_or_else(|| MissingField(name.to_string()))?
+        .ok_or_else(|| PasswordError::MissingField(name.to_string()))?
         .as_str();
-    value.parse().map_err(|_| InvalidField {
+    value.parse().map_err(|_| PasswordError::InvalidField {
         name: name.to_string(),
         value: value.to_string(),
     })
