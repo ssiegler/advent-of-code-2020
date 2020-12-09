@@ -3,7 +3,6 @@ use itertools::Itertools;
 use lazy_static::lazy_static;
 use regex::Regex;
 use std::collections::HashMap;
-use std::collections::HashSet;
 use std::ops::RangeBounds;
 use std::str::FromStr;
 
@@ -64,14 +63,7 @@ fn is_valid_passport_id(pid: &str) -> bool {
 
 // ecl (Eye Color) - exactly one of: amb blu brn gry grn hzl oth.
 fn is_valid_eye_color(color: &str) -> bool {
-    lazy_static! {
-        static ref VALID_EYE_COLORS: HashSet<&'static str> =
-            ["amb", "blu", "brn", "gry", "grn", "hzl", "oth"]
-                .iter()
-                .cloned()
-                .collect();
-    }
-    VALID_EYE_COLORS.contains(color)
+    matches!(color, "amb" | "blu" | "brn" | "gry" | "grn" | "hzl" | "oth")
 }
 
 // hcl (Hair Color) - a # followed by exactly six characters 0-9 or a-f.
