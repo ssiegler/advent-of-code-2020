@@ -1,7 +1,7 @@
-use crate::puzzle::{Input, Puzzle};
+use crate::puzzle::{Lines, Puzzle};
 use itertools::Itertools;
 
-type Day01 = Input<Vec<i32>>;
+type Day01 = Lines<i32>;
 
 impl Day01 {
     const SUM: i32 = 2020;

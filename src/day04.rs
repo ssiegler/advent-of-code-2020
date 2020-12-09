@@ -1,86 +1,57 @@
+use crate::puzzle::{Blocks, Puzzle};
+use itertools::Itertools;
+use lazy_static::lazy_static;
+use regex::Regex;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::ops::RangeBounds;
+use std::str::FromStr;
 
-use lazy_static::lazy_static;
-use regex::Regex;
+type Day04 = Blocks<Passport>;
 
-fn main() {
-    let input = std::fs::read_to_string("inputs/day04.txt").expect("Failed to read input");
-    let passports_with_required_fields: Vec<Passport> =
-        read_passports(&input).filter(has_required_fields).collect();
-    println!(
-        "Got {} passports with all required fields",
-        passports_with_required_fields.len()
-    );
-    let valid_count = passports_with_required_fields
-        .iter()
-        .filter(|passport| is_valid(passport))
-        .count();
-    println!("Got {} valid passports", valid_count);
-}
+struct Passport(HashMap<String, String>);
 
-struct Passport<'a> {
-    fields: HashMap<&'a str, &'a str>,
-}
+impl Passport {
+    const REQUIRED_KEYS: &'static [&'static str] = &[
+        "byr", // (Birth Year)
+        "iyr", // (Issue Year)
+        "eyr", // (Expiration Year)
+        "hgt", // (Height)
+        "hcl", // (Hair Color)
+        "ecl", // (Eye Color)
+        "pid", // (Passport ID)
+               // "cid", // (Country ID)
+    ];
 
-impl<'a> Passport<'a> {
-    fn check_field<P>(&'a self, name: &str, condition: P) -> bool
+    fn has_required_fields(&self) -> bool {
+        Self::REQUIRED_KEYS
+            .iter()
+            .all(|key| self.0.contains_key(*key))
+    }
+
+    // byr (Birth Year) - four digits; at least 1920 and at most 2002.
+    // iyr (Issue Year) - four digits; at least 2010 and at most 2020.
+    // eyr (Expiration Year) - four digits; at least 2020 and at most 2030.
+    fn is_valid(&self) -> bool {
+        self.has_required_fields()
+            && self.check_field("pid", is_valid_passport_id)
+            && self.check_field("ecl", is_valid_eye_color)
+            && self.check_field("hcl", is_valid_hair_color)
+            && self.check_field("hgt", is_valid_height)
+            && self.check_field("eyr", |year| is_number_in_range(year, 2020..=2030))
+            && self.check_field("iyr", |year| is_number_in_range(year, 2010..=2020))
+            && self.check_field("byr", |year| is_number_in_range(year, 1920..=2002))
+    }
+
+    fn check_field<P>(&self, name: &str, condition: P) -> bool
     where
         P: Fn(&str) -> bool,
     {
-        self.fields
+        self.0
             .get(name)
             .map(|value| condition(value))
             .unwrap_or(false)
     }
-}
-
-impl<'a> From<&'a str> for Passport<'a> {
-    fn from(input: &'a str) -> Self {
-        let fields: HashMap<&str, &str> = input
-            .lines()
-            .flat_map(|line| line.split_whitespace())
-            .filter_map(|pair| {
-                let mut pair = pair.splitn(2, ':');
-                pair.next().zip(pair.next())
-            })
-            .collect();
-        Passport { fields }
-    }
-}
-
-fn read_passports(input: &str) -> impl Iterator<Item = Passport> + '_ {
-    input.split("\n\n").map(|lines| lines.into())
-}
-
-const REQUIRED_KEYS: &[&str] = &[
-    "byr", // (Birth Year)
-    "iyr", // (Issue Year)
-    "eyr", // (Expiration Year)
-    "hgt", // (Height)
-    "hcl", // (Hair Color)
-    "ecl", // (Eye Color)
-    "pid", // (Passport ID)
-];
-
-fn has_required_fields(passport: &Passport) -> bool {
-    REQUIRED_KEYS
-        .iter()
-        .all(|key| passport.fields.contains_key(key))
-}
-
-// byr (Birth Year) - four digits; at least 1920 and at most 2002.
-// iyr (Issue Year) - four digits; at least 2010 and at most 2020.
-// eyr (Expiration Year) - four digits; at least 2020 and at most 2030.
-fn is_valid(passport: &Passport) -> bool {
-    passport.check_field("pid", is_valid_passport_id)
-        && passport.check_field("ecl", is_valid_eye_color)
-        && passport.check_field("hcl", is_valid_hair_color)
-        && passport.check_field("hgt", is_valid_height)
-        && passport.check_field("eyr", |year| is_number_in_range(year, 2020..=2030))
-        && passport.check_field("iyr", |year| is_number_in_range(year, 2010..=2020))
-        && passport.check_field("byr", |year| is_number_in_range(year, 1920..=2002))
 }
 
 // pid (Passport ID) - a nine-digit number, including leading zeroes.
@@ -129,11 +100,38 @@ fn is_number_in_range(input: &str, range: impl RangeBounds<u32>) -> bool {
         .unwrap_or(false)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+impl FromStr for Passport {
+    type Err = ();
 
-    const EXAMPLE_INPUT: &str = "ecl:gry pid:860033327 eyr:2020 hcl:#fffffd
+    fn from_str(input: &str) -> Result<Self, Self::Err> {
+        Ok(Passport(
+            input
+                .split_whitespace()
+                .filter_map(|field| field.splitn(2, ':').map(String::from).collect_tuple())
+                .collect(),
+        ))
+    }
+}
+
+impl Puzzle for Day04 {
+    fn solve_part1(&self) -> String {
+        self.iter()
+            .filter(|passport| passport.has_required_fields())
+            .count()
+            .to_string()
+    }
+
+    fn solve_part2(&self) -> String {
+        self.iter()
+            .filter(|passport| passport.is_valid())
+            .count()
+            .to_string()
+    }
+}
+
+test_puzzle!(Day04;
+    Example("\
+ecl:gry pid:860033327 eyr:2020 hcl:#fffffd
 byr:1937 iyr:2017 cid:147 hgt:183cm
 
 iyr:2013 ecl:amb cid:350 eyr:2023 pid:028048884
@@ -145,21 +143,15 @@ ecl:brn pid:760753108 byr:1931
 hgt:179cm
 
 hcl:#cfa07d eyr:2025 pid:166559648
-iyr:2011 ecl:brn hgt:59in";
+iyr:2011 ecl:brn hgt:59in", 2, 2),
 
-    #[test]
-    fn reports_2_valid_passports_in_example() {
-        assert_eq!(
-            2,
-            read_passports(EXAMPLE_INPUT)
-                .filter(has_required_fields)
-                .count()
-        );
-    }
+    File("inputs/day04.txt", 204, 179)
+);
 
-    // byr valid:   2002
-    // byr invalid: 2003
-    //
+#[cfg(test)]
+mod tests {
+    use super::*;
+
     #[test]
     fn validates_heigt() {
         assert!(is_valid_height("60in"));
@@ -189,8 +181,8 @@ iyr:2011 ecl:brn hgt:59in";
 
     #[test]
     fn recognizes_invalid_passports() {
-        assert!(read_passports(
-            "eyr:1972 cid:100
+        assert!("\
+eyr:1972 cid:100
 hcl:#18171d ecl:amb hgt:170 pid:186cm iyr:2018 byr:1926
 
 iyr:2019
@@ -203,14 +195,16 @@ ecl:brn hgt:182cm pid:021572410 eyr:2020 byr:1992 cid:277
 hgt:59cm ecl:zzz
 eyr:2038 hcl:74454a iyr:2023
 pid:3556412378 byr:2007"
-        )
-        .all(|passport| !is_valid(&passport)));
+            .parse::<Day04>()
+            .expect("Failed to parse passports")
+            .iter()
+            .all(|passport| !passport.is_valid()));
     }
 
     #[test]
     fn recognizes_valid_passports() {
-        assert!(read_passports(
-            "pid:087499704 hgt:74in ecl:grn iyr:2012 eyr:2030 byr:1980
+        assert!("\
+pid:087499704 hgt:74in ecl:grn iyr:2012 eyr:2030 byr:1980
 hcl:#623a2f
 
 eyr:2029 ecl:blu cid:129 byr:1989
@@ -223,7 +217,9 @@ eyr:2022
 
 iyr:2010 hgt:158cm hcl:#b6652a ecl:blu byr:1944 eyr:2021 pid:093154719
 "
-        )
-        .all(|passport| is_valid(&passport)));
+        .parse::<Day04>()
+        .expect("Failed to parse passports")
+        .iter()
+        .all(|passport| passport.is_valid()));
     }
 }

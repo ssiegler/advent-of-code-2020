@@ -1,6 +1,6 @@
-use crate::puzzle::{Input, Puzzle};
+use crate::puzzle::{Lines, Puzzle};
 
-type Day03 = Input<Vec<String>>;
+type Day03 = Lines<String>;
 
 struct Slope {
     down: usize,

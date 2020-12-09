@@ -6,24 +6,47 @@ pub trait Puzzle: FromStr {
     fn solve_part2(&self) -> String;
 }
 
-pub struct Input<T>(T);
+pub struct Lines<T>(Vec<T>);
 
-impl<T> Deref for Input<T> {
-    type Target = T;
+impl<T> Deref for Lines<T> {
+    type Target = Vec<T>;
 
     fn deref(&self) -> &Self::Target {
         &self.0
     }
 }
 
-impl<T: FromStr> FromStr for Input<Vec<T>> {
+impl<T: FromStr> FromStr for Lines<T> {
     type Err = T::Err;
 
     fn from_str(input: &str) -> Result<Self, Self::Err> {
-        Ok(Input(
+        Ok(Lines(
             input
                 .lines()
                 .map(|line| line.parse())
+                .collect::<Result<_, _>>()?,
+        ))
+    }
+}
+
+pub struct Blocks<T>(Vec<T>);
+
+impl<T> Deref for Blocks<T> {
+    type Target = Vec<T>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl<T: FromStr> FromStr for Blocks<T> {
+    type Err = T::Err;
+
+    fn from_str(input: &str) -> Result<Self, Self::Err> {
+        Ok(Blocks(
+            input
+                .split("\n\n")
+                .map(|block| block.parse())
                 .collect::<Result<_, _>>()?,
         ))
     }
@@ -35,7 +58,7 @@ macro_rules! test_puzzle {
         File($path:literal, $part1:literal, $part2:literal)
     ) => {
         #[cfg(test)]
-        mod tests {
+        mod puzzle_tests {
             use super::*;
             use lazy_static::lazy_static;
 

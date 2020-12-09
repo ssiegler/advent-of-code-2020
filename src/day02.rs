@@ -1,11 +1,11 @@
 use crate::day02::PasswordError::{InvalidField, MissingField, RecordMismatch};
-use crate::puzzle::{Input, Puzzle};
+use crate::puzzle::{Lines, Puzzle};
 use lazy_static::lazy_static;
 use regex::{Captures, Regex};
 use std::str::FromStr;
 use thiserror::Error;
 
-type Day02 = Input<Vec<Password>>;
+type Day02 = Lines<Password>;
 
 impl Puzzle for Day02 {
     fn solve_part1(&self) -> String {
