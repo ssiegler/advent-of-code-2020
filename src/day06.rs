@@ -37,18 +37,20 @@ impl FromStr for GroupAnswers {
     }
 }
 
+impl Day06 {
+    fn sum_over_groups<F: Fn(&GroupAnswers) -> usize>(&self, map: F) -> usize {
+        self.iter().map(map).sum()
+    }
+}
+
 impl Puzzle for Day06 {
     fn solve_part1(&self) -> String {
-        self.iter()
-            .map(|group_answers| group_answers.count_questions_with_any_yes())
-            .sum::<usize>()
+        self.sum_over_groups(GroupAnswers::count_questions_with_any_yes)
             .to_string()
     }
 
     fn solve_part2(&self) -> String {
-        self.iter()
-            .map(|group_answers| group_answers.count_agreements())
-            .sum::<usize>()
+        self.sum_over_groups(GroupAnswers::count_agreements)
             .to_string()
     }
 }
@@ -76,7 +78,6 @@ File("inputs/day06.txt", 6590, 3288)
 #[cfg(test)]
 mod tests {
     use super::*;
-    use itertools::Itertools;
 
     #[test]
     fn counts_any_yes() {
