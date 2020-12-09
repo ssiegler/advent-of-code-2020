@@ -74,11 +74,17 @@ macro_rules! test_puzzle {
 
             #[test]
             fn solves_example_part1() {
-                assert_eq!(EXAMPLE.solve_part1(), $ex_part1.to_string())
+                assert_eq!(
+                    <$type as $crate::puzzle::Puzzle>::solve_part1(&EXAMPLE),
+                    $ex_part1.to_string()
+                )
             }
             #[test]
             fn solves_example_part2() {
-                assert_eq!(EXAMPLE.solve_part2(), $ex_part2.to_string())
+                assert_eq!(
+                    <$type as $crate::puzzle::Puzzle>::solve_part2(&EXAMPLE),
+                    $ex_part2.to_string()
+                )
             }
             #[test]
             fn solves_part1() {
