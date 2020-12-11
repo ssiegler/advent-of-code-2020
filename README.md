@@ -1,5 +1,7 @@
-# advent-of-code-2020
+# Solutions for Advent of Code 2020 in Rust
 
-My rust solutions for the [AOC] puzzles in 2020.
+![CI](https://github.com/ssiegler/advent-of-code-2020/workflows/CI/badge.svg)
 
-[AOC]: https://adventofcode.com/
+My Rust solutions for the [Advent of Code] puzzles in 2020.
+
+[Advent of Code]: <https://adventofcode.com/> 
