@@ -1,10 +1,6 @@
-name: Rust
+name: Check rust code
 
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+on: [push]
 
 env:
   CARGO_TERM_COLOR: always
@@ -24,14 +20,17 @@ jobs:
           profile: minimal
           toolchain: stable
           components: rustfmt, clippy
+
       - name: Build
         uses: actions-rs/cargo@v1
         with:
           command: build
+
       - name: Execute tests
         uses: actions-rs/cargo@v1
         with:
           command: test
+
       - name: Annotate commit with clippy warnings
         uses: actions-rs/clippy-check@v1
         with:
