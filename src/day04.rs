@@ -1,12 +1,8 @@
-use crate::puzzle::{Blocks, Puzzle};
 use itertools::Itertools;
 use lazy_static::lazy_static;
 use regex::Regex;
 use std::collections::HashMap;
 use std::ops::RangeBounds;
-use std::str::FromStr;
-
-type Day04 = Blocks<Passport>;
 
 struct Passport(HashMap<String, String>);
 
@@ -28,17 +24,17 @@ impl Passport {
             .all(|key| self.0.contains_key(*key))
     }
 
-    // byr (Birth Year) - four digits; at least 1920 and at most 2002.
-    // iyr (Issue Year) - four digits; at least 2010 and at most 2020.
-    // eyr (Expiration Year) - four digits; at least 2020 and at most 2030.
     fn is_valid(&self) -> bool {
         self.has_required_fields()
             && self.check_field("pid", is_valid_passport_id)
             && self.check_field("ecl", is_valid_eye_color)
             && self.check_field("hcl", is_valid_hair_color)
             && self.check_field("hgt", is_valid_height)
+            // eyr (Expiration Year) - four digits; at least 2020 and at most 2030.
             && self.check_field("eyr", |year| is_number_in_range(year, 2020..=2030))
+            // iyr (Issue Year) - four digits; at least 2010 and at most 2020.
             && self.check_field("iyr", |year| is_number_in_range(year, 2010..=2020))
+            // byr (Birth Year) - four digits; at least 1920 and at most 2002.
             && self.check_field("byr", |year| is_number_in_range(year, 1920..=2002))
     }
 
@@ -92,37 +88,43 @@ fn is_number_in_range(input: &str, range: impl RangeBounds<u32>) -> bool {
         .unwrap_or(false)
 }
 
-impl FromStr for Passport {
-    type Err = ();
-
-    fn from_str(input: &str) -> Result<Self, Self::Err> {
-        Ok(Passport(
+impl<'a> From<&'a str> for Passport {
+    fn from(input: &'a str) -> Self {
+        Passport(
             input
                 .split_whitespace()
                 .filter_map(|field| field.splitn(2, ':').map(String::from).collect_tuple())
                 .collect(),
-        ))
+        )
     }
 }
 
-impl Puzzle for Day04 {
-    fn solve_part1(&self) -> String {
-        self.iter()
-            .filter(|passport| passport.has_required_fields())
-            .count()
-            .to_string()
-    }
-
-    fn solve_part2(&self) -> String {
-        self.iter()
-            .filter(|passport| passport.is_valid())
-            .count()
-            .to_string()
-    }
+#[aoc_generator(day4)]
+fn read_passports(input: &str) -> Vec<Passport> {
+    input.split("\n\n").map(Passport::from).collect_vec()
 }
 
-test_puzzle!(Day04;
-    Example("\
+#[aoc(day4, part1)]
+fn part1(passports: &[Passport]) -> usize {
+    passports
+        .iter()
+        .filter(|passport| passport.has_required_fields())
+        .count()
+}
+
+#[aoc(day4, part2)]
+fn part2(passports: &[Passport]) -> usize {
+    passports
+        .iter()
+        .filter(|passport| passport.is_valid())
+        .count()
+}
+
+#[cfg(test)]
+mod should {
+    use super::*;
+
+    const EXAMPLE: &str = "\
 ecl:gry pid:860033327 eyr:2020 hcl:#fffffd
 byr:1937 iyr:2017 cid:147 hgt:183cm
 
@@ -135,14 +137,24 @@ ecl:brn pid:760753108 byr:1931
 hgt:179cm
 
 hcl:#cfa07d eyr:2025 pid:166559648
-iyr:2011 ecl:brn hgt:59in", 2, 2),
+iyr:2011 ecl:brn hgt:59in";
 
-    File("inputs/day04.txt", 204, 179)
-);
+    const INPUT: &str = include_str!("../input/2020/day4.txt");
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+    #[test]
+    fn solve_example_part1() {
+        assert_eq!(part1(&read_passports(EXAMPLE)), 2);
+    }
+
+    #[test]
+    fn solve_part1() {
+        assert_eq!(part1(&read_passports(INPUT)), 204);
+    }
+
+    #[test]
+    fn solve_part2() {
+        assert_eq!(part2(&read_passports(INPUT)), 179);
+    }
 
     #[test]
     fn validates_heigt() {
@@ -173,7 +185,8 @@ mod tests {
 
     #[test]
     fn recognizes_invalid_passports() {
-        assert!("\
+        assert!(read_passports(
+            "\
 eyr:1972 cid:100
 hcl:#18171d ecl:amb hgt:170 pid:186cm iyr:2018 byr:1926
 
@@ -187,15 +200,15 @@ ecl:brn hgt:182cm pid:021572410 eyr:2020 byr:1992 cid:277
 hgt:59cm ecl:zzz
 eyr:2038 hcl:74454a iyr:2023
 pid:3556412378 byr:2007"
-            .parse::<Day04>()
-            .expect("Failed to parse passports")
-            .iter()
-            .all(|passport| !passport.is_valid()));
+        )
+        .iter()
+        .all(|passport| !passport.is_valid()));
     }
 
     #[test]
     fn recognizes_valid_passports() {
-        assert!("\
+        assert!(read_passports(
+            "\
 pid:087499704 hgt:74in ecl:grn iyr:2012 eyr:2030 byr:1980
 hcl:#623a2f
 
@@ -209,8 +222,7 @@ eyr:2022
 
 iyr:2010 hgt:158cm hcl:#b6652a ecl:blu byr:1944 eyr:2021 pid:093154719
 "
-        .parse::<Day04>()
-        .expect("Failed to parse passports")
+        )
         .iter()
         .all(|passport| passport.is_valid()));
     }

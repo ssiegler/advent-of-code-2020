@@ -1,11 +1,8 @@
-use crate::puzzle::{Lines, Puzzle};
 use itertools::Itertools;
 use std::num::ParseIntError;
 use std::str::FromStr;
 
-type Day05 = Lines<Seat>;
-
-#[derive(Eq, PartialEq, Debug)]
+#[derive(PartialEq, Debug)]
 struct Seat {
     row: u32,
     column: u32,
@@ -32,39 +29,35 @@ fn decode_binary(zero: char, one: char, binary_code: &str) -> Result<u32, ParseI
     u32::from_str_radix(&binary_code.replace(zero, "0").replace(one, "1"), 2)
 }
 
-impl Puzzle for Day05 {
-    fn solve_part1(&self) -> String {
-        self.iter()
-            .map(|seat| seat.seat_id())
-            .max()
-            .map_or_else(|| "No seats!".to_string(), |seat_id| seat_id.to_string())
-    }
-
-    fn solve_part2(&self) -> String {
-        let seat_ids: Vec<u32> = self.iter().map(|seat| seat.seat_id()).sorted().collect();
-        seat_ids
-            .windows(2)
-            .find_map(|pair| {
-                if pair[0] + 1 == pair[1] - 1 {
-                    Some(pair[0] + 1)
-                } else {
-                    None
-                }
-            })
-            .map_or_else(
-                || "Seat not found".to_string(),
-                |seat_id| seat_id.to_string(),
-            )
-    }
+#[aoc_generator(day5)]
+fn read_seat_ids(input: &str) -> Result<Vec<u32>, ParseIntError> {
+    input
+        .lines()
+        .map(|line| line.parse::<Seat>())
+        .map_results(|seat| seat.seat_id())
+        .collect()
 }
 
-test_puzzle!(Day05;
-Example("\
-FBFBBFFRLR
-BFFFBBFRRR
-FFFBBBFRRR
-BBFFBBFRLL", 820, "Seat not found"),
-File("inputs/day05.txt", 838, 714));
+#[aoc(day5, part1)]
+fn part1(seat_ids: &[u32]) -> Option<u32> {
+    seat_ids.iter().max().cloned()
+}
+
+#[aoc(day5, part2)]
+fn part2(seat_ids: &[u32]) -> Option<u32> {
+    seat_ids
+        .iter()
+        .sorted()
+        .collect_vec()
+        .windows(2)
+        .find_map(|pair| {
+            if pair[0] + 1 == pair[1] - 1 {
+                Some(pair[0] + 1)
+            } else {
+                None
+            }
+        })
+}
 
 #[cfg(test)]
 mod tests {
@@ -78,6 +71,8 @@ mod tests {
             column: 4,
         },
     ];
+
+    const INPUT: &str = include_str!("../input/2020/day5.txt");
 
     #[test]
     fn decodes_examples() {
@@ -94,5 +89,20 @@ mod tests {
     fn calculates_seat_id() {
         let ids: Vec<u32> = EXAMPLE_SEATS.iter().map(|seat| seat.seat_id()).collect();
         assert_eq!(ids, &[567, 119, 820]);
+    }
+
+    #[test]
+    fn solves_part1() {
+        assert_eq!(
+            read_seat_ids(INPUT).map(|seat_ids| part1(&seat_ids)),
+            Ok(Some(838))
+        );
+    }
+    #[test]
+    fn solves_part2() {
+        assert_eq!(
+            read_seat_ids(INPUT).map(|seat_ids| part2(&seat_ids)),
+            Ok(Some(714))
+        );
     }
 }

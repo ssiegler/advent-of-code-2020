@@ -1,71 +1,16 @@
 #[macro_use]
-mod puzzle;
-
-mod day01;
-mod day02;
-mod day03;
-mod day04;
-mod day05;
-mod day06;
-
-use std::fs::File;
-use std::io::{BufRead, BufReader};
-use std::path::Path;
+extern crate aoc_runner_derive;
 use std::str::FromStr;
 
-pub fn read_lines(path: impl AsRef<Path>) -> impl Iterator<Item = String> {
-    let input = File::open(path).expect("Failed to open input file");
-    BufReader::new(input)
-        .lines()
-        .map(|line| line.expect("Failed to read line"))
+pub fn read_lines<T: FromStr>(input: &str) -> Result<Vec<T>, T::Err> {
+    input.lines().map(|line| line.parse()).collect()
 }
 
-pub fn read_from_file<T>(path: impl AsRef<Path>) -> impl Iterator<Item = T>
-where
-    T: FromStr,
-{
-    read_lines(path)
-        .enumerate()
-        .filter(|(_, line)| !line.is_empty())
-        .map(|(index, line)| {
-            line.parse::<T>()
-                .unwrap_or_else(|_| panic!("failed to parse line {}: '{:?}'", index, &line))
-        })
-}
+pub mod day01;
+pub mod day02;
+pub mod day03;
+pub mod day04;
+pub mod day05;
+pub mod day06;
 
-pub fn read_numbers_from_file(path: impl AsRef<Path>) -> Vec<i32> {
-    read_from_file(path).collect()
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::read_numbers_from_file;
-    use std::io::Write;
-    use tempfile::NamedTempFile;
-
-    #[test]
-    fn reads_numbers_from_file() -> Result<(), Box<dyn std::error::Error>> {
-        let mut file = NamedTempFile::new()?;
-        writeln!(
-            file,
-            "1
-2
-12
-13
-{}
-1000
--1
-{}
-",
-            i32::max_value(),
-            i32::min_value()
-        )?;
-
-        assert_eq!(
-            read_numbers_from_file(file.path()),
-            &[1, 2, 12, 13, i32::max_value(), 1000, -1, i32::min_value()]
-        );
-
-        Ok(())
-    }
-}
+aoc_lib! { year = 2020 }

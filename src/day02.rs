@@ -1,125 +1,117 @@
-use crate::puzzle::{Lines, Puzzle};
-use lazy_static::lazy_static;
-use regex::{Captures, Regex};
-use std::str::FromStr;
 use thiserror::Error;
 
-type Day02 = Lines<Password>;
+use crate::read_lines;
+use std::char::ParseCharError;
+use std::num::ParseIntError;
+use std::str::FromStr;
 
-impl Puzzle for Day02 {
-    fn solve_part1(&self) -> String {
-        self.iter()
-            .filter(|password| password.is_valid())
-            .count()
-            .to_string()
-    }
-
-    fn solve_part2(&self) -> String {
-        self.iter()
-            .filter(|password| password.is_officially_valid())
-            .count()
-            .to_string()
-    }
-}
-
-#[derive(Debug, Eq, PartialEq)]
 struct Password {
-    min: usize,
-    max: usize,
+    low: usize,
+    high: usize,
     letter: char,
-    password: String,
-}
-
-impl Password {
-    fn is_valid(&self) -> bool {
-        let count = self
-            .password
-            .chars()
-            .filter(|ch| *ch == self.letter)
-            .count();
-        count >= self.min && count <= self.max
-    }
-
-    fn is_officially_valid(&self) -> bool {
-        match (
-            self.password
-                .chars()
-                .nth(self.min - 1)
-                .map(|ch| ch == self.letter),
-            self.password
-                .chars()
-                .nth(self.max - 1)
-                .map(|ch| ch == self.letter),
-        ) {
-            (Some(true), Some(false)) => true,
-            (Some(false), Some(true)) => true,
-            _ => false,
-        }
-    }
+    word: String,
 }
 
 impl FromStr for Password {
-    type Err = PasswordError;
+    type Err = ParseError;
 
     fn from_str(input: &str) -> Result<Self, Self::Err> {
-        lazy_static! {
-            static ref RE: Regex = Regex::new(
-                r"(?x)
-            ^(?P<min>[\d]+)
-            -
-            (?P<max>[\d]+)
-            \s
-            (?P<letter>[\w])
-            :\s
-            (?P<password>[\w]+)$
-            "
-            )
-            .unwrap();
-        }
-        let cap = RE
-            .captures(input)
-            .ok_or_else(|| PasswordError::RecordMismatch(input.to_string()))?;
-        let (min, max, letter, password) = (
-            from_named(&cap, "min")?,
-            from_named(&cap, "max")?,
-            from_named(&cap, "letter")?,
-            from_named(&cap, "password")?,
-        );
+        let mut parts = input.splitn(2, ": ");
+        let (low, high, letter) = split_policy(parts.next().unwrap())?;
+        let word = parts.next().unwrap().to_string();
         Ok(Password {
-            min,
-            max,
+            low,
+            high,
             letter,
-            password,
+            word,
         })
     }
 }
 
-fn from_named<T: FromStr>(cap: &Captures, name: &str) -> Result<T, PasswordError> {
-    let value = cap
-        .name(name)
-        .ok_or_else(|| PasswordError::MissingField(name.to_string()))?
-        .as_str();
-    value.parse().map_err(|_| PasswordError::InvalidField {
-        name: name.to_string(),
-        value: value.to_string(),
-    })
+fn split_policy(input: &str) -> Result<(usize, usize, char), ParseError> {
+    let mut policy = input.splitn(3, &[' ', '-'][..]);
+    Ok((
+        policy.next().unwrap().parse::<usize>()?,
+        policy.next().unwrap().parse::<usize>()?,
+        policy.next().unwrap().parse::<char>()?,
+    ))
 }
 
-#[derive(Error, Debug)]
-pub enum PasswordError {
-    #[error("The field `{0}` is missing")]
-    MissingField(String),
-    #[error("Value {name:?} invalid for field `{name}`")]
-    InvalidField { name: String, value: String },
-    #[error("Record does not fit password fields: {0:?}")]
-    RecordMismatch(String),
+#[derive(Debug, Error, PartialEq)]
+enum ParseError {
+    #[error(transparent)]
+    InvalidNumber(#[from] ParseIntError),
+    #[error(transparent)]
+    InvalidLetter(#[from] ParseCharError),
 }
 
-test_puzzle!(
-    Day02;
-    Example("\
+impl Password {
+    fn is_valid(&self) -> bool {
+        let count = self.word.chars().filter(|ch| *ch == self.letter).count();
+        count >= self.low && count <= self.high
+    }
+
+    fn is_officially_valid(&self) -> bool {
+        self.word
+            .get(self.low - 1..self.high)
+            .map(|substring| substring.starts_with(self.letter) != substring.ends_with(self.letter))
+            .unwrap_or(false)
+    }
+}
+
+#[aoc_generator(day2)]
+fn read_passwords(input: &str) -> Result<Vec<Password>, ParseError> {
+    read_lines(input)
+}
+
+#[aoc(day2, part1)]
+fn part1(passwords: &[Password]) -> usize {
+    passwords
+        .iter()
+        .filter(|password| password.is_valid())
+        .count()
+}
+
+#[aoc(day2, part2)]
+fn part2(passwords: &[Password]) -> usize {
+    passwords
+        .iter()
+        .filter(|password| password.is_officially_valid())
+        .count()
+}
+
+#[cfg(test)]
+mod should {
+    use super::*;
+
+    const EXAMPLE: &str = "\
 1-3 a: abcde
 1-3 b: cdefg
-2-9 c: ccccccccc", 2, 1),
-    File("inputs/day02.txt", 603, 404)
-);
+2-9 c: ccccccccc";
+
+    const INPUT: &str = include_str!("../input/2020/day2.txt");
+
+    #[test]
+    fn solves_example_part1() {
+        assert_eq!(
+            read_passwords(EXAMPLE).map(|passwords| part1(&passwords)),
+            Ok(2)
+        );
+    }
+
+    #[test]
+    fn solves_part1() {
+        assert_eq!(
+            read_passwords(INPUT).map(|passwords| part1(&passwords)),
+            Ok(603)
+        );
+    }
+
+    #[test]
+    fn solves_example_part2() {
+        assert_eq!(
+            read_passwords(EXAMPLE).map(|passwords| part2(&passwords)),
+            Ok(1)
+        );
+    }
+}
