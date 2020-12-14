@@ -11,6 +11,8 @@ pub fn read_lines<T: FromStr>(input: &str) -> Result<Vec<T>, T::Err> {
 
 #[derive(Debug, Error, PartialEq)]
 pub enum ParseError {
+    #[error("Format mismatch")]
+    FormatError,
     #[error("Missing: {0}")]
     Missing(&'static str),
     #[error(transparent)]

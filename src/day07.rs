@@ -1,8 +1,92 @@
-use itertools::Itertools;
 use std::collections::{HashMap, HashSet, VecDeque};
+use std::str::FromStr;
+
+use itertools::Itertools;
+
+use crate::{read_lines, ParseError};
+
+type Bag = String;
+
+struct Rule {
+    container: Bag,
+    contents: Vec<(usize, Bag)>,
+}
+
+impl FromStr for Rule {
+    type Err = ParseError;
+
+    fn from_str(line: &str) -> Result<Self, Self::Err> {
+        let (container, contents) = line
+            .splitn(2, " bags contain ")
+            .collect_tuple()
+            .ok_or(ParseError::FormatError)?;
+        let contents = read_counts(contents)?;
+        Ok(Rule {
+            container: container.to_string(),
+            contents,
+        })
+    }
+}
+
+fn read_counts(input: &str) -> Result<Vec<(usize, String)>, ParseError> {
+    Ok(if input == "no other bags." {
+        vec![]
+    } else {
+        input
+            .strip_suffix(".")
+            .ok_or(ParseError::Missing("dot at end of rule"))?
+            .split(", ")
+            .map(read_count)
+            .collect::<Result<_, _>>()?
+    })
+}
+
+fn read_count(input: &str) -> Result<(usize, String), ParseError> {
+    let parts = input.split_whitespace().collect_vec();
+    if parts.len() != 4 || !matches!(parts[3], "bags" | "bag") {
+        Err(ParseError::FormatError)
+    } else {
+        Ok((parts[0].parse()?, format!("{} {}", parts[1], parts[2])))
+    }
+}
 
 #[aoc_generator(day7)]
-fn read_containers(input: &str) -> HashMap<String, Vec<String>> {
+fn read_rules(input: &str) -> Result<Vec<Rule>, ParseError> {
+    read_lines(input)
+}
+
+#[aoc(day7, part1, Rules)]
+fn part1_rules(rules: &[Rule]) -> usize {
+    let mut bags: HashSet<String> = HashSet::new();
+    let mut queue: VecDeque<String> = VecDeque::new();
+    queue.push_back("shiny gold".to_string());
+    while let Some(bag) = queue.pop_front() {
+        let containers = rules
+            .iter()
+            .filter(|rule| rule.contents.iter().any(|(_, content)| bag == *content))
+            .map(|rule| rule.container.clone())
+            .collect_vec();
+        queue.extend(containers.iter().cloned());
+        bags.extend(containers.iter().cloned());
+    }
+    bags.len()
+}
+
+#[aoc(day7, part1, Map)]
+fn part1(rules: &[Rule]) -> usize {
+    let contained_in: HashMap<Bag, Vec<Bag>> = rules
+        .iter()
+        .flat_map(|rule| {
+            rule.contents
+                .iter()
+                .map(move |(_, bag)| (bag.clone(), rule.container.clone()))
+        })
+        .into_group_map();
+    count_containment_options(&contained_in)
+}
+
+#[aoc_generator(day7, part1, direct)]
+fn read_map(input: &str) -> HashMap<String, Vec<String>> {
     input
         .lines()
         .flat_map(|line| split_contained_pairs(line))
@@ -10,10 +94,10 @@ fn read_containers(input: &str) -> HashMap<String, Vec<String>> {
         .into_group_map()
 }
 
-#[aoc(day7, part1)]
-fn part1(contained_in: &HashMap<String, Vec<String>>) -> usize {
-    let mut bags: HashSet<String> = HashSet::new();
-    let mut queue: VecDeque<String> = VecDeque::new();
+#[aoc(day7, part1, direct)]
+fn count_containment_options(contained_in: &HashMap<String, Vec<String>>) -> usize {
+    let mut bags: HashSet<Bag> = HashSet::new();
+    let mut queue: VecDeque<Bag> = VecDeque::new();
     queue.push_back("shiny gold".to_string());
     while let Some(bag) = queue.pop_front() {
         if let Some(containers) = contained_in.get(&bag) {
@@ -60,21 +144,38 @@ vibrant plum bags contain 5 faded blue bags, 6 dotted black bags.
 faded blue bags contain no other bags.
 dotted black bags contain no other bags.";
 
-    #[test]
-    fn normalizes_bag_specs() {
-        assert_eq!(normalize("1 bright white bag"), "bright white");
-        assert_eq!(normalize("6 dotted black bags"), "dotted black");
+    const INPUT: &str = include_str!("../input/2020/day7.txt");
+
+    fn solve(solver: fn(&[Rule]) -> usize, input: &str) -> Result<usize, ParseError> {
+        read_rules(input).map(|rules| solver(&rules))
     }
 
     #[test]
     fn solve_example() {
-        assert_eq!(part1(&read_containers(EXAMPLE)), 4);
+        assert_eq!(solve(part1, EXAMPLE), Ok(4));
     }
 
-    const INPUT: &str = include_str!("../input/2020/day7.txt");
+    #[test]
+    fn solve_example_without_map() {
+        assert_eq!(solve(part1_rules, EXAMPLE), Ok(4));
+    }
+    #[test]
+    fn solve_example_without_parsing() {
+        assert_eq!(count_containment_options(&read_map(EXAMPLE)), 4);
+    }
 
     #[test]
     fn solve_part1() {
-        assert_eq!(part1(&read_containers(INPUT)), 155);
+        assert_eq!(solve(part1, INPUT), Ok(155));
+    }
+
+    #[test]
+    fn solve_part1_without_map() {
+        assert_eq!(solve(part1_rules, INPUT), Ok(155));
+    }
+
+    #[test]
+    fn solve_part1_without_parsing() {
+        assert_eq!(count_containment_options(&read_map(INPUT)), 155);
     }
 }
