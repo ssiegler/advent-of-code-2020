@@ -38,8 +38,9 @@ fn count_combinations(joltages: &[u32]) -> usize {
     counts[0] = 1;
     for (offset, current) in joltages.iter().enumerate() {
         for (index, _) in (1..).zip(
-            joltages[offset + 1..]
+            joltages[offset..]
                 .iter()
+                .skip(1)
                 .take_while(|next| **next - *current <= 3),
         ) {
             counts[index + offset] += counts[offset];
