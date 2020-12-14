@@ -1,9 +1,6 @@
-use thiserror::Error;
-
-use crate::read_lines;
-use std::char::ParseCharError;
-use std::num::ParseIntError;
 use std::str::FromStr;
+
+use crate::{read_lines, ParseError};
 
 struct Password {
     low: usize,
@@ -18,7 +15,7 @@ impl FromStr for Password {
     fn from_str(input: &str) -> Result<Self, Self::Err> {
         let mut parts = input.splitn(2, ": ");
         let (low, high, letter) = split_policy(parts.next().unwrap())?;
-        let word = parts.next().unwrap().to_string();
+        let word = parts.next().ok_or(ParseError::Missing("word"))?.to_string();
         Ok(Password {
             low,
             high,
@@ -31,18 +28,19 @@ impl FromStr for Password {
 fn split_policy(input: &str) -> Result<(usize, usize, char), ParseError> {
     let mut policy = input.splitn(3, &[' ', '-'][..]);
     Ok((
-        policy.next().unwrap().parse::<usize>()?,
-        policy.next().unwrap().parse::<usize>()?,
-        policy.next().unwrap().parse::<char>()?,
+        policy
+            .next()
+            .ok_or(ParseError::Missing("low"))?
+            .parse::<usize>()?,
+        policy
+            .next()
+            .ok_or(ParseError::Missing("low"))?
+            .parse::<usize>()?,
+        policy
+            .next()
+            .ok_or(ParseError::Missing("low"))?
+            .parse::<char>()?,
     ))
-}
-
-#[derive(Debug, Error, PartialEq)]
-enum ParseError {
-    #[error(transparent)]
-    InvalidNumber(#[from] ParseIntError),
-    #[error(transparent)]
-    InvalidLetter(#[from] ParseCharError),
 }
 
 impl Password {

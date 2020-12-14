@@ -2,7 +2,7 @@ use itertools::Itertools;
 use std::num::ParseIntError;
 use std::str::FromStr;
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone)]
 struct Seat {
     row: u32,
     column: u32,
@@ -81,8 +81,7 @@ mod tests {
             .map(|code| code.parse())
             .collect();
 
-        assert!(seats.is_ok());
-        assert_eq!(seats.unwrap(), EXAMPLE_SEATS);
+        assert_eq!(seats, Ok(EXAMPLE_SEATS.to_vec()));
     }
 
     #[test]

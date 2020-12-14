@@ -1,9 +1,22 @@
 #[macro_use]
 extern crate aoc_runner_derive;
+use std::char::ParseCharError;
+use std::num::ParseIntError;
 use std::str::FromStr;
+use thiserror::Error;
 
 pub fn read_lines<T: FromStr>(input: &str) -> Result<Vec<T>, T::Err> {
     input.lines().map(|line| line.parse()).collect()
+}
+
+#[derive(Debug, Error, PartialEq)]
+pub enum ParseError {
+    #[error("Missing: {0}")]
+    Missing(&'static str),
+    #[error(transparent)]
+    InvalidNumber(#[from] ParseIntError),
+    #[error(transparent)]
+    InvalidLetter(#[from] ParseCharError),
 }
 
 pub mod day01;
