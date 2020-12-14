@@ -67,6 +67,18 @@ fn fix_programm(input: &str) -> impl Iterator<Item = String> + '_ {
     })
 }
 
+#[aoc(day8, part2)]
+fn find_termination_fix(input: &str) -> Option<i32> {
+    fix_programm(input)
+        .map(|fix| run_first_iteration(&fix))
+        .find_map(|result| {
+            result.ok().and_then(|result| match result {
+                ExecutionResult::Terminated(result) => Some(result),
+                ExecutionResult::Stopped(_) => None,
+            })
+        })
+}
+
 #[cfg(test)]
 mod should {
     use super::*;
@@ -92,5 +104,10 @@ acc +6";
     #[test]
     fn solve_part1() {
         assert_eq!(part1(INPUT), Ok(1801));
+    }
+
+    #[test]
+    fn finds_fix_for_example() {
+        assert_eq!(find_termination_fix(EXAMPLE), Some(8));
     }
 }
