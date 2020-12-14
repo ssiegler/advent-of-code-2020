@@ -129,6 +129,24 @@ fn normalize(part: &str) -> &str {
         .trim()
 }
 
+fn count_bags(rules: &[Rule], bag: &str) -> usize {
+    rules
+        .iter()
+        .find(|rule| rule.container == *bag)
+        .map(|rule| {
+            rule.contents
+                .iter()
+                .map(|(count, bag)| count + (count_bags(rules, bag) * count))
+                .sum::<usize>()
+        })
+        .unwrap_or(0)
+}
+
+#[aoc(day7, part2)]
+fn part2(rules: &[Rule]) -> usize {
+    count_bags(&rules, "shiny gold")
+}
+
 #[cfg(test)]
 mod should {
     use super::*;
@@ -143,6 +161,15 @@ dark olive bags contain 3 faded blue bags, 4 dotted black bags.
 vibrant plum bags contain 5 faded blue bags, 6 dotted black bags.
 faded blue bags contain no other bags.
 dotted black bags contain no other bags.";
+
+    const EXAMPLE2: &str = "\
+shiny gold bags contain 2 dark red bags.
+dark red bags contain 2 dark orange bags.
+dark orange bags contain 2 dark yellow bags.
+dark yellow bags contain 2 dark green bags.
+dark green bags contain 2 dark blue bags.
+dark blue bags contain 2 dark violet bags.
+dark violet bags contain no other bags.";
 
     const INPUT: &str = include_str!("../input/2020/day7.txt");
 
@@ -177,5 +204,30 @@ dotted black bags contain no other bags.";
     #[test]
     fn solve_part1_without_parsing() {
         assert_eq!(count_containment_options(&read_map(INPUT)), 155);
+    }
+
+    #[test]
+    fn counts_bags_in_example() {
+        let rules = read_rules(EXAMPLE).expect("Failed to read example rules");
+        assert_eq!(count_bags(&rules, "faded blue"), 0);
+        assert_eq!(count_bags(&rules, "dotted black"), 0);
+        assert_eq!(count_bags(&rules, "vibrant plum"), 11);
+        assert_eq!(count_bags(&rules, "dark olive"), 7);
+        assert_eq!(count_bags(&rules, "shiny gold"), 32);
+    }
+
+    #[test]
+    fn solve_example_part2() {
+        assert_eq!(solve(part2, EXAMPLE), Ok(32));
+    }
+
+    #[test]
+    fn solve_second_example() {
+        assert_eq!(solve(part2, EXAMPLE2), Ok(126));
+    }
+
+    #[test]
+    fn solve_part2() {
+        assert_eq!(solve(part2, INPUT), Ok(54803));
     }
 }
