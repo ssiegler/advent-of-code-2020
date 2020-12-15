@@ -1,13 +1,15 @@
-use itertools::Itertools;
+use std::cmp::{max, min};
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 
+use itertools::Itertools;
+
 use crate::ParseError;
-use std::time::Instant;
 
 #[derive(Debug, PartialEq, Clone)]
 struct Seats {
     columns: usize,
+    rows: usize,
     tiles: Vec<u8>,
 }
 
@@ -15,16 +17,12 @@ impl Seats {
     fn next_round(&mut self) {
         let mut tiles = Vec::with_capacity(self.tiles.len());
 
-        for (row_index, row) in self.rows().enumerate() {
-            for (column_index, cell) in row.iter().enumerate() {
-                tiles.push(
-                    match (cell, self.count_occupied_neighbors(row_index, column_index)) {
-                        (b'L', 0) => b'#',
-                        (b'#', n) if (n >= 4) => b'L',
-                        _ => *cell,
-                    },
-                );
-            }
+        for (index, cell) in self.tiles.iter().enumerate() {
+            tiles.push(match (cell, self.count_occupied_neighbors(index)) {
+                (b'L', 0) => b'#',
+                (b'#', n) if (n >= 4) => b'L',
+                _ => *cell,
+            });
         }
         self.tiles = tiles;
     }
@@ -40,31 +38,29 @@ impl Seats {
         }
     }
 
-    fn count_occupied_neighbors(&self, row: usize, column: usize) -> usize {
-        self.rows()
-            .enumerate()
-            .skip_while(|(index, _)| *index + 1 < row)
-            .take_while(|(index, _)| *index <= row + 1)
-            .flat_map(|(row_index, cells)| {
-                cells
-                    .iter()
-                    .enumerate()
-                    .skip_while(|(index, _)| *index + 1 < column)
-                    .take_while(|(index, _)| *index <= column + 1)
-                    .filter(move |(column_index, _)| *column_index != column || row_index != row)
-                    .map(|(_, cell)| *cell)
-            })
-            .filter(|cell| *cell == b'#')
-            .count()
-    }
-
-    fn rows(&self) -> impl Iterator<Item = &[u8]> {
-        self.tiles.chunks(self.columns)
+    fn count_occupied_neighbors(&self, index: usize) -> usize {
+        let row = index / self.columns;
+        let column = index % self.columns;
+        let mut count = 0;
+        for neighbor_row in (max(1, row) - 1)..min(self.rows, row + 2) {
+            for neighbor_column in (max(1, column) - 1)..min(self.columns, column + 2) {
+                if neighbor_column == column && neighbor_row == row {
+                    continue;
+                } else if self.get(neighbor_row, neighbor_column) == Some(b'#') {
+                    count += 1;
+                }
+            }
+        }
+        count
     }
 
     fn count_occupied(&self) -> usize {
         // bytecount::count(&self.tiles, b'#')
         self.tiles.iter().filter(|cell| **cell == b'#').count()
+    }
+
+    fn get(&self, row: usize, column: usize) -> Option<u8> {
+        self.tiles.get(row * self.columns + column).cloned()
     }
 }
 
@@ -92,8 +88,11 @@ impl FromStr for Seats {
             }
             tiles.extend(line.as_bytes());
         }
+        let columns = columns.unwrap_or(0);
+        let rows = tiles.len() / columns;
         Ok(Seats {
-            columns: columns.unwrap_or(0),
+            columns,
+            rows,
             tiles,
         })
     }
@@ -101,12 +100,13 @@ impl FromStr for Seats {
 
 impl Display for Seats {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        for item in self
-            .rows()
-            .map(String::from_utf8_lossy)
+        for ch in self
+            .tiles
+            .chunks(self.columns)
+            .map(|row| String::from_utf8_lossy(row))
             .intersperse("\n".into())
         {
-            write!(f, "{}", item)?;
+            write!(f, "{}", ch)?;
         }
         Ok(())
     }
@@ -114,8 +114,9 @@ impl Display for Seats {
 
 #[cfg(test)]
 mod should {
-    use super::*;
     use lazy_static::lazy_static;
+
+    use super::*;
 
     const EXAMPLE: &str = "\
 L.LL.LL.LL
@@ -175,7 +176,7 @@ L.LLLLL.LL";
 #.#####.##"
             )
             .expect("Failed to read example")
-            .count_occupied_neighbors(0, 2),
+            .count_occupied_neighbors(2),
             4
         );
     }
