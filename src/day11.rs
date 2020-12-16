@@ -46,7 +46,7 @@ impl Seats {
             for neighbor_column in (max(1, column) - 1)..min(self.columns, column + 2) {
                 if neighbor_column == column && neighbor_row == row {
                     continue;
-                } else if self.get(neighbor_row, neighbor_column) == Some(b'#') {
+                } else if self.tiles[neighbor_row * self.columns + neighbor_column] == b'#' {
                     count += 1;
                 }
             }
@@ -56,10 +56,6 @@ impl Seats {
 
     fn count_occupied(&self) -> usize {
         bytecount::count(&self.tiles, b'#')
-    }
-
-    fn get(&self, row: usize, column: usize) -> Option<u8> {
-        self.tiles.get(row * self.columns + column).cloned()
     }
 }
 
