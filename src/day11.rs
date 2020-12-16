@@ -15,16 +15,18 @@ struct Seats {
 
 impl Seats {
     fn simulate_iteration(&mut self) {
-        let mut tiles = Vec::with_capacity(self.tiles.len());
-
-        for (index, cell) in self.tiles.iter().enumerate() {
-            tiles.push(match (cell, self.count_occupied_neighbors(index)) {
-                (b'L', 0) => b'#',
-                (b'#', n) if (n >= 4) => b'L',
-                _ => *cell,
-            });
-        }
-        self.tiles = tiles;
+        self.tiles = self
+            .tiles
+            .iter()
+            .enumerate()
+            .map(
+                |(index, cell)| match (cell, self.count_occupied_neighbors(index)) {
+                    (b'L', 0) => b'#',
+                    (b'#', n) if (n >= 4) => b'L',
+                    _ => *cell,
+                },
+            )
+            .collect_vec()
     }
 
     fn iterate_until_stable(&mut self, iteration: fn(&mut Self)) {
