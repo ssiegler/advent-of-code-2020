@@ -14,7 +14,7 @@ struct Seats {
 }
 
 impl Seats {
-    fn next_round(&mut self) {
+    fn simulate_iteration(&mut self) {
         let mut tiles = Vec::with_capacity(self.tiles.len());
 
         for (index, cell) in self.tiles.iter().enumerate() {
@@ -27,10 +27,10 @@ impl Seats {
         self.tiles = tiles;
     }
 
-    fn iterate_until_stable(&mut self) {
+    fn iterate_until_stable(&mut self, iteration: fn(&mut Self)) {
         let mut current = self.tiles.clone();
         loop {
-            self.next_round();
+            iteration(self);
             if current == self.tiles {
                 return;
             }
@@ -72,7 +72,7 @@ fn read_seats(input: &str) -> Result<Seats, ParseError> {
 #[aoc(day11, part1)]
 fn count_stabilized_seats(seats: &Seats) -> usize {
     let mut seats = seats.clone();
-    seats.iterate_until_stable();
+    seats.iterate_until_stable(Seats::simulate_iteration);
     seats.count_occupied()
 }
 
@@ -142,7 +142,7 @@ L.LLLLL.LL";
     #[test]
     fn all_seats_become_occupied_on_first_round() {
         let mut seats = SEATS.clone();
-        seats.next_round();
+        seats.simulate_iteration();
         assert_eq!(
             seats.to_string(),
             "\
@@ -184,8 +184,8 @@ L.LLLLL.LL";
     #[test]
     fn correctly_computes_second_round() {
         let mut seats = SEATS.clone();
-        seats.next_round();
-        seats.next_round();
+        seats.simulate_iteration();
+        seats.simulate_iteration();
         assert_eq!(
             seats.to_string(),
             "\
