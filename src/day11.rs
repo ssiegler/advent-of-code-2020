@@ -55,8 +55,7 @@ impl Seats {
     }
 
     fn count_occupied(&self) -> usize {
-        // bytecount::count(&self.tiles, b'#')
-        self.tiles.iter().filter(|cell| **cell == b'#').count()
+        bytecount::count(&self.tiles, b'#')
     }
 
     fn get(&self, row: usize, column: usize) -> Option<u8> {
