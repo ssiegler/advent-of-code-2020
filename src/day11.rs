@@ -14,19 +14,25 @@ struct Seats {
 }
 
 impl Seats {
-    fn simulate_iteration(&mut self) {
+    fn iterate(&mut self, rule: impl Fn(&Self, usize, u8) -> u8) {
         self.tiles = self
             .tiles
             .iter()
             .enumerate()
-            .map(
-                |(index, cell)| match (cell, self.count_occupied_neighbors(index)) {
-                    (b'L', 0) => b'#',
-                    (b'#', n) if (n >= 4) => b'L',
-                    _ => *cell,
-                },
-            )
+            .map(|(index, cell)| rule(self, index, *cell))
             .collect_vec()
+    }
+
+    fn iterate_neighbor_rule(&mut self) {
+        self.iterate(Self::neighbor_rule);
+    }
+
+    fn neighbor_rule(&self, index: usize, cell: u8) -> u8 {
+        match (cell, self.count_occupied_neighbors(index)) {
+            (b'L', 0) => b'#',
+            (b'#', n) if (n >= 4) => b'L',
+            _ => cell,
+        }
     }
 
     fn iterate_until_stable(&mut self, iteration: fn(&mut Self)) {
@@ -69,7 +75,7 @@ fn read_seats(input: &str) -> Result<Seats, ParseError> {
 #[aoc(day11, part1)]
 fn count_stabilized_seats(seats: &Seats) -> usize {
     let mut seats = seats.clone();
-    seats.iterate_until_stable(Seats::simulate_iteration);
+    seats.iterate_until_stable(Seats::iterate_neighbor_rule);
     seats.count_occupied()
 }
 
@@ -139,7 +145,7 @@ L.LLLLL.LL";
     #[test]
     fn all_seats_become_occupied_on_first_round() {
         let mut seats = SEATS.clone();
-        seats.simulate_iteration();
+        seats.iterate_neighbor_rule();
         assert_eq!(
             seats.to_string(),
             "\
@@ -181,8 +187,8 @@ L.LLLLL.LL";
     #[test]
     fn correctly_computes_second_round() {
         let mut seats = SEATS.clone();
-        seats.simulate_iteration();
-        seats.simulate_iteration();
+        seats.iterate_neighbor_rule();
+        seats.iterate_neighbor_rule();
         assert_eq!(
             seats.to_string(),
             "\
