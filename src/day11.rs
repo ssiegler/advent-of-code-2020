@@ -42,14 +42,13 @@ impl Seats {
         for neighbor_row in row - 1..row + 2 {
             if 1 <= neighbor_row && neighbor_row <= self.rows {
                 for neighbor_column in column - 1..column + 2 {
-                    if 1 <= neighbor_column && neighbor_column <= self.columns {
-                        if neighbor_column != column || neighbor_row != row {
-                            if self.tiles[(neighbor_row - 1) * self.columns + neighbor_column - 1]
-                                == b'#'
-                            {
-                                count += 1;
-                            }
-                        }
+                    if 1 <= neighbor_column
+                        && neighbor_column <= self.columns
+                        && (neighbor_column != column || neighbor_row != row)
+                        && self.tiles[(neighbor_row - 1) * self.columns + neighbor_column - 1]
+                            == b'#'
+                    {
+                        count += 1;
                     }
                 }
             }
