@@ -6,61 +6,58 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
+  test-versions:
+    name: Test Rust ${{ matrix.rust }}
     runs-on: ubuntu-latest
-    
+    strategy:
+      fail-fast: false
+      matrix:
+        # if you have an MSRV, you can of course include it here too.
+        rust: [stable, beta, nightly]
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-        
-      - name: Install stable rust with rustfmt and clippy
-        uses: actions-rs/toolchain@v1
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.rust}}
+      - uses: actions-rs/cargo@v1
+        with:
+          command: test --verbose --all-features
+      - uses: actions-rs/cargo@v1
+        with:
+          command: test --verbose --no-default-features
+
+  rustfmt:
+    name: Verify code formatting
+    runs-on: ubuntu-latest
+    steps:  
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
           toolchain: stable
-          components: rustfmt, clippy
-
-      - name: Build
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-
-      - name: Test
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-
-      - name: Annotate commit with clippy warnings
-        uses: actions-rs/clippy-check@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          args: --all-features
-      
-      - name: Run rustfmt
-        uses: actions-rs/cargo@v1
+          components: rustfmt     
+      - uses: actions-rs/cargo@v1
         with:
           command: fmt
           args: -- --check --verbose
 
-  coverage:
+  clippy:
+    name: Lint with Clippy
     runs-on: ubuntu-latest
+    env:
+      RUSTFLAGS: -Dwarnings
     
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-    
-      # the action needs a nightly toolchain
+      - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: nightly
-          components: llvm-tools-preview
-
-      - uses: Swatinem/fucov@v1
-
-      # afterwards, upload the report to codecov
-      - uses: codecov/codecov-action@v1
+          toolchain: stable
+          components: clippy
+      - uses: actions-rs/clippy-check@v1
         with:
-          directory: coverage
-  
+          token: ${{ secrets.GITHUB_TOKEN }}
+          args: --all-features
+      
     
