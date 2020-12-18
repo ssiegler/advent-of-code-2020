@@ -1,4 +1,3 @@
-use std::cmp::{max, min};
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 
@@ -11,51 +10,47 @@ struct Seats {
     columns: usize,
     rows: usize,
     tiles: Vec<u8>,
+    buffer: Vec<u8>,
 }
 
 impl Seats {
-    fn iterate(&mut self, rule: impl Fn(&Self, usize, u8) -> u8) {
-        self.tiles = self
-            .tiles
-            .iter()
-            .enumerate()
-            .map(|(index, cell)| rule(self, index, *cell))
-            .collect_vec()
+    fn iterate_until_stable(&mut self, iteration: fn(&mut Self)) {
+        while self.buffer != self.tiles {
+            iteration(self);
+        }
     }
 
     fn iterate_neighbor_rule(&mut self) {
-        self.iterate(Self::neighbor_rule);
+        for (index, cell) in self.tiles.iter().enumerate() {
+            self.buffer[index] = self.neighbor_rule(*cell, index);
+        }
+        std::mem::swap(&mut self.buffer, &mut self.tiles);
     }
 
-    fn neighbor_rule(&self, index: usize, cell: u8) -> u8 {
+    fn neighbor_rule(&self, cell: u8, index: usize) -> u8 {
         match (cell, self.count_occupied_neighbors(index)) {
             (b'L', 0) => b'#',
-            (b'#', n) if (n >= 4) => b'L',
+            (b'#', n) if n >= 4 => b'L',
             _ => cell,
         }
     }
 
-    fn iterate_until_stable(&mut self, iteration: fn(&mut Self)) {
-        let mut current = self.tiles.clone();
-        loop {
-            iteration(self);
-            if current == self.tiles {
-                return;
-            }
-            current = self.tiles.clone();
-        }
-    }
-
     fn count_occupied_neighbors(&self, index: usize) -> usize {
-        let row = index / self.columns;
-        let column = index % self.columns;
         let mut count = 0;
-        for neighbor_row in (max(1, row) - 1)..min(self.rows, row + 2) {
-            for neighbor_column in (max(1, column) - 1)..min(self.columns, column + 2) {
-                if neighbor_column == column && neighbor_row == row {
-                    continue;
-                } else if self.tiles[neighbor_row * self.columns + neighbor_column] == b'#' {
-                    count += 1;
+        let row = index / self.columns + 1;
+        let column = index % self.columns + 1;
+        for neighbor_row in row - 1..row + 2 {
+            if 1 <= neighbor_row && neighbor_row <= self.rows {
+                for neighbor_column in column - 1..column + 2 {
+                    if 1 <= neighbor_column && neighbor_column <= self.columns {
+                        if neighbor_column != column || neighbor_row != row {
+                            if self.tiles[(neighbor_row - 1) * self.columns + neighbor_column - 1]
+                                == b'#'
+                            {
+                                count += 1;
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -97,6 +92,7 @@ impl FromStr for Seats {
             columns,
             rows,
             tiles,
+            buffer: vec![0; rows * columns],
         })
     }
 }
