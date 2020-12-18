@@ -22,10 +22,12 @@ jobs:
           toolchain: ${{ matrix.rust}}
       - uses: actions-rs/cargo@v1
         with:
-          command: test --verbose --all-features
+          command: test
+          args: --verbose --all-features
       - uses: actions-rs/cargo@v1
         with:
-          command: test --verbose --no-default-features
+          command: test
+          args: --verbose --no-default-features
 
   rustfmt:
     name: Verify code formatting
