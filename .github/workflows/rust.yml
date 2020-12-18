@@ -42,3 +42,19 @@ jobs:
         with:
           command: fmt
           args: -- --check --verbose
+
+      # the action needs a nightly toolchain
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly
+          components: llvm-tools-preview
+
+      - uses: Swatinem/fucov@v1
+
+      # afterwards, upload the report to codecov
+      - uses: codecov/codecov-action@v1
+        with:
+          directory: coverage
+  
+    
