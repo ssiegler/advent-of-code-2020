@@ -50,6 +50,14 @@ impl Seats {
         }
     }
 
+    fn get(&self, row: usize, column: usize) -> Option<u8> {
+        if 1 <= row && row <= self.rows && 1 <= column && column <= self.columns {
+            Some(self.tiles[(row - 1) * self.columns + column - 1])
+        } else {
+            None
+        }
+    }
+
     fn count_occupied_visible(&self, index: usize) -> usize {
         let mut count = 0;
         let row = index / self.columns + 1;
@@ -66,25 +74,11 @@ impl Seats {
         ] {
             let mut neighbor_row = row as isize + delta_row;
             let mut neighbor_column = column as isize + delta_column;
-            while 1 <= neighbor_row
-                && neighbor_row <= self.rows as isize
-                && 1 <= neighbor_column
-                && neighbor_column <= self.columns as isize
-                && self.tiles
-                    [((neighbor_row - 1) * self.columns as isize + neighbor_column - 1) as usize]
-                    == b'.'
-            {
+            while let Some(b'.') = self.get(neighbor_row as usize, neighbor_column as usize) {
                 neighbor_row += delta_row;
                 neighbor_column += delta_column;
             }
-            if 1 <= neighbor_row
-                && neighbor_row <= self.rows as isize
-                && 1 <= neighbor_column
-                && neighbor_column <= self.columns as isize
-                && self.tiles
-                    [((neighbor_row - 1) * self.columns as isize + neighbor_column - 1) as usize]
-                    == b'#'
-            {
+            if let Some(b'#') = self.get(neighbor_row as usize, neighbor_column as usize) {
                 count += 1;
             }
         }
@@ -96,14 +90,9 @@ impl Seats {
         let row = index / self.columns + 1;
         let column = index % self.columns + 1;
         for neighbor_row in row - 1..row + 2 {
-            if 1 <= neighbor_row && neighbor_row <= self.rows {
-                for neighbor_column in column - 1..column + 2 {
-                    if 1 <= neighbor_column
-                        && neighbor_column <= self.columns
-                        && (neighbor_column != column || neighbor_row != row)
-                        && self.tiles[(neighbor_row - 1) * self.columns + neighbor_column - 1]
-                            == b'#'
-                    {
+            for neighbor_column in column - 1..column + 2 {
+                if neighbor_column != column || neighbor_row != row {
+                    if let Some(b'#') = self.get(neighbor_row, neighbor_column) {
                         count += 1;
                     }
                 }
