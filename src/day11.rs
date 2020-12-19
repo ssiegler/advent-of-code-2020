@@ -27,12 +27,68 @@ impl Seats {
         std::mem::swap(&mut self.buffer, &mut self.tiles);
     }
 
+    fn iterate_visible_rule(&mut self) {
+        for (index, cell) in self.tiles.iter().enumerate() {
+            self.buffer[index] = self.visible_rule(*cell, index);
+        }
+        std::mem::swap(&mut self.buffer, &mut self.tiles);
+    }
+
     fn neighbor_rule(&self, cell: u8, index: usize) -> u8 {
         match (cell, self.count_occupied_neighbors(index)) {
             (b'L', 0) => b'#',
             (b'#', n) if n >= 4 => b'L',
             _ => cell,
         }
+    }
+
+    fn visible_rule(&self, cell: u8, index: usize) -> u8 {
+        match (cell, self.count_occupied_visible(index)) {
+            (b'L', 0) => b'#',
+            (b'#', n) if n >= 5 => b'L',
+            _ => cell,
+        }
+    }
+
+    fn count_occupied_visible(&self, index: usize) -> usize {
+        let mut count = 0;
+        let row = index / self.columns + 1;
+        let column = index % self.columns + 1;
+        for (delta_row, delta_column) in &[
+            (-1, -1),
+            (-1, 0),
+            (-1, 1),
+            (0, -1),
+            (0, 1),
+            (1, -1),
+            (1, 0),
+            (1, 1),
+        ] {
+            let mut neighbor_row = row as isize + delta_row;
+            let mut neighbor_column = column as isize + delta_column;
+            while 1 <= neighbor_row
+                && neighbor_row <= self.rows as isize
+                && 1 <= neighbor_column
+                && neighbor_column <= self.columns as isize
+                && self.tiles
+                    [((neighbor_row - 1) * self.columns as isize + neighbor_column - 1) as usize]
+                    == b'.'
+            {
+                neighbor_row += delta_row;
+                neighbor_column += delta_column;
+            }
+            if 1 <= neighbor_row
+                && neighbor_row <= self.rows as isize
+                && 1 <= neighbor_column
+                && neighbor_column <= self.columns as isize
+                && self.tiles
+                    [((neighbor_row - 1) * self.columns as isize + neighbor_column - 1) as usize]
+                    == b'#'
+            {
+                count += 1;
+            }
+        }
+        count
     }
 
     fn count_occupied_neighbors(&self, index: usize) -> usize {
@@ -70,6 +126,13 @@ fn read_seats(input: &str) -> Result<Seats, ParseError> {
 fn count_stabilized_seats(seats: &Seats) -> usize {
     let mut seats = seats.clone();
     seats.iterate_until_stable(Seats::iterate_neighbor_rule);
+    seats.count_occupied()
+}
+
+#[aoc(day11, part2)]
+fn count_stabilized_visible_seats(seats: &Seats) -> usize {
+    let mut seats = seats.clone();
+    seats.iterate_until_stable(Seats::iterate_visible_rule);
     seats.count_occupied()
 }
 
@@ -212,6 +275,61 @@ L.L.L..L..
         assert_eq!(
             Seats::from_str(INPUT).map(|seats| count_stabilized_seats(&seats)),
             Ok(2329)
+        );
+    }
+
+    #[test]
+    fn counts_8_visible_occupied() {
+        assert_eq!(
+            Seats::from_str(
+                "\
+.......#.
+...#.....
+.#.......
+.........
+..#L....#
+....#....
+.........
+#........
+...#....."
+            )
+            .expect("failed to read example")
+            .count_occupied_visible(39),
+            8
+        );
+    }
+
+    #[test]
+    fn correctly_computes_second_visible_round() {
+        let mut seats = SEATS.clone();
+        seats.iterate_visible_rule();
+        seats.iterate_visible_rule();
+        assert_eq!(
+            seats.to_string(),
+            "\
+#.LL.LL.L#
+#LLLLLL.LL
+L.L.L..L..
+LLLL.LL.LL
+L.LL.LL.LL
+L.LLLLL.LL
+..L.L.....
+LLLLLLLLL#
+#.LLLLLL.L
+#.LLLLL.L#"
+        );
+    }
+
+    #[test]
+    fn counts_26_occupied_seats_when_example_stabilizes() {
+        assert_eq!(count_stabilized_visible_seats(&SEATS), 26);
+    }
+
+    #[test]
+    fn solves_part2() {
+        assert_eq!(
+            Seats::from_str(INPUT).map(|seats| count_stabilized_visible_seats(&seats)),
+            Ok(2138)
         );
     }
 }
