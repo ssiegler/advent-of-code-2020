@@ -146,6 +146,56 @@ fn measure_manhattan_distance(instructions: &[Instruction]) -> usize {
     position.north.abs() as usize + position.east.abs() as usize
 }
 
+#[aoc(day12, part2)]
+fn measure_manhattan_distance_using_waypoint(instructions: &[Instruction]) -> usize {
+    let mut ship = Ship::default();
+    ship.execute_instructions(instructions);
+    ship.position.0.abs() as usize + ship.position.1.abs() as usize
+}
+
+#[derive(Debug, Eq, PartialEq)]
+struct Ship {
+    waypoint: (isize, isize),
+    position: (isize, isize),
+}
+
+impl Default for Ship {
+    fn default() -> Self {
+        Self {
+            waypoint: (10, 1),
+            position: (0, 0),
+        }
+    }
+}
+
+impl Ship {
+    fn execute_instructions(&mut self, instructions: &[Instruction]) {
+        for instruction in instructions {
+            self.execute_instruction(instruction);
+        }
+    }
+
+    fn execute_instruction(&mut self, instruction: &Instruction) {
+        match instruction {
+            Instruction::Move(None, times) => {
+                self.position = (
+                    *times as isize * self.waypoint.0 + self.position.0,
+                    *times as isize * self.waypoint.1 + self.position.1,
+                )
+            }
+            Instruction::Move(Some(direction), amount) => match direction {
+                Orientation::East => self.waypoint.0 += *amount as isize,
+                Orientation::South => self.waypoint.1 -= *amount as isize,
+                Orientation::West => self.waypoint.0 -= *amount as isize,
+                Orientation::North => self.waypoint.1 += *amount as isize,
+            },
+            Instruction::TurnLeft => self.waypoint = (-self.waypoint.1, self.waypoint.0),
+            Instruction::TurnRight => self.waypoint = (self.waypoint.1, -self.waypoint.0),
+            Instruction::TurnAround => self.waypoint = (-self.waypoint.0, -self.waypoint.1),
+        }
+    }
+}
+
 #[cfg(test)]
 mod should {
     use super::*;
@@ -191,5 +241,28 @@ F11",
     #[test]
     fn solves_part1() {
         assert_eq!(measure_manhattan_distance(&INPUT), 1152);
+    }
+
+    #[test]
+    fn moves_correctly_using_waypoint_for_example() {
+        let mut ship = Ship::default();
+        ship.execute_instructions(&EXAMPLE);
+        assert_eq!(
+            ship,
+            Ship {
+                position: (214, -72),
+                waypoint: (4, -10)
+            }
+        );
+    }
+
+    #[test]
+    fn solves_example_part2() {
+        assert_eq!(measure_manhattan_distance_using_waypoint(&EXAMPLE), 286);
+    }
+
+    #[test]
+    fn solves_part2() {
+        assert_eq!(measure_manhattan_distance_using_waypoint(&INPUT), 58637);
     }
 }
