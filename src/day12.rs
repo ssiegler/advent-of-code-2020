@@ -72,7 +72,9 @@ impl Position {
     fn execute_instruction(&mut self, instruction: &Instruction) {
         match instruction {
             Instruction::Move(orientation, value) => {
-                let orientation = orientation.clone().unwrap_or(self.orientation.clone());
+                let orientation = orientation
+                    .clone()
+                    .unwrap_or_else(|| self.orientation.clone());
                 self.move_to(&orientation, value)
             }
             Instruction::TurnAround => self.turn_around(),
