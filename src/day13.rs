@@ -121,28 +121,28 @@ mod should {
     const INPUT: &str = include_str!("../input/2020/day13.txt");
 
     #[test]
-    fn solves_part1() {
+    fn solve_part1() {
         assert_eq!(
             multiply_departure_with_wait(&Notes::from_str(INPUT).expect("failed to parse input")),
             Some(2238)
         );
     }
 
-    fn solve_part2(input: &str) -> Result<usize, ParseError> {
+    fn part2(input: &str) -> Result<usize, ParseError> {
         read_schedule(input).map(|schedule| find_scheduled_departure(&schedule))
     }
 
     #[test]
     fn solve_part2_example() {
-        assert_eq!(solve_part2("\n17,x,13,19"), Ok(3417));
-        assert_eq!(solve_part2("\n67,7,59,61"), Ok(754018));
-        assert_eq!(solve_part2("\n67,x,7,59,61"), Ok(779210));
-        assert_eq!(solve_part2("\n67,7,x,59,61"), Ok(1261476));
-        assert_eq!(solve_part2("\n1789,37,47,1889"), Ok(1202161486));
+        assert_eq!(part2("\n17,x,13,19"), Ok(3417));
+        assert_eq!(part2("\n67,7,59,61"), Ok(754018));
+        assert_eq!(part2("\n67,x,7,59,61"), Ok(779210));
+        assert_eq!(part2("\n67,7,x,59,61"), Ok(1261476));
+        assert_eq!(part2("\n1789,37,47,1889"), Ok(1202161486));
     }
 
     #[test]
     fn solve_part2() {
-        assert_eq!(solve_part2(INPUT), Ok(560214575859998));
+        assert_eq!(part2(INPUT), Ok(560214575859998));
     }
 }
