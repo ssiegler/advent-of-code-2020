@@ -7,6 +7,7 @@ use itertools::Itertools;
 
 use crate::day14::Instruction::{UpdateMask, Write};
 use crate::{read_lines, ParseError};
+use std::marker::PhantomData;
 
 const BITS: usize = 36;
 
@@ -28,15 +29,6 @@ impl FromStr for Mask {
         let ones: BitVec = input.bytes().map(|bit| bit == b'1').collect();
         debug_assert!(ones.len() == BITS);
         Ok(Mask { ones, zeroes })
-    }
-}
-
-impl Mask {
-    fn apply_to(&self, value: &Value) -> Value {
-        let mut value = value.clone();
-        value.0.or(&self.ones);
-        value.0.difference(&self.zeroes);
-        value
     }
 }
 
@@ -73,9 +65,14 @@ impl FromStr for Value {
 
 type Memory = HashMap<Value, Value>;
 
-struct Computer {
+trait MemoryAccess: Default {
+    fn store(memory: &mut Memory, mask: &Mask, address: &Value, value: &Value);
+}
+
+struct Computer<T: MemoryAccess> {
     mask: Mask,
     memory: Memory,
+    phantom: PhantomData<T>,
 }
 
 #[derive(Debug, PartialEq)]
@@ -103,15 +100,14 @@ impl FromStr for Instruction {
     }
 }
 
-impl Computer {
+impl<T: MemoryAccess> Computer<T> {
     fn execute_instruction(&mut self, instruction: &Instruction) {
         match instruction {
             UpdateMask(mask) => {
                 self.mask = mask.clone();
             }
             Instruction::Write { value, address } => {
-                self.memory
-                    .insert(address.clone(), self.mask.apply_to(value));
+                T::store(&mut self.memory, &self.mask, address, value);
             }
         }
     }
@@ -130,15 +126,28 @@ impl Computer {
     }
 }
 
-impl Default for Computer {
+impl<T: MemoryAccess> Default for Computer<T> {
     fn default() -> Self {
-        Computer {
+        Self {
             mask: Mask {
                 ones: BitVec::from_elem(BITS, false),
                 zeroes: BitVec::from_elem(BITS, false),
             },
             memory: Default::default(),
+            phantom: Default::default(),
         }
+    }
+}
+
+#[derive(Default)]
+struct ValueMasking {}
+
+impl MemoryAccess for ValueMasking {
+    fn store(memory: &mut Memory, mask: &Mask, address: &Value, value: &Value) {
+        let mut value = value.clone();
+        value.0.or(&mask.ones);
+        value.0.difference(&mask.zeroes);
+        memory.insert(address.clone(), value);
     }
 }
 
@@ -149,7 +158,7 @@ fn read_program(input: &str) -> Result<Vec<Instruction>, ParseError> {
 
 #[aoc(day14, part1)]
 fn execute_program(program: &[Instruction]) -> u64 {
-    let mut computer = Computer::default();
+    let mut computer: Computer<ValueMasking> = Computer::default();
     computer.execute_program(&program);
     computer.sum_memory()
 }
@@ -157,21 +166,6 @@ fn execute_program(program: &[Instruction]) -> u64 {
 #[cfg(test)]
 mod should {
     use super::*;
-
-    #[test]
-    fn applies_mask_to_values() {
-        let mask =
-            Mask::from_str("XXXXXXXXXXXXXXXXXXXXXXXXXXXXX1XXXX0X").expect("failed to parse mask");
-        assert_eq!(mask.apply_to(&11.into()), 73.into());
-        assert_eq!(mask.apply_to(&0.into()), 64.into());
-    }
-
-    #[test]
-    fn value_is_unaffected_by_mask() {
-        let mask =
-            Mask::from_str("XXXXXXXXXXXXXXXXXXXXXXXXXXXXX1XXXX0X").expect("failed to parse mask");
-        assert_eq!(mask.apply_to(&101.into()), 101.into());
-    }
 
     #[test]
     fn parses_mask_instruction() {
