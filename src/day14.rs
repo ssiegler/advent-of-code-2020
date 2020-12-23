@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 use std::convert::TryInto;
+use std::fmt::{Debug, Display, Formatter};
+use std::marker::PhantomData;
 use std::str::FromStr;
 
 use bit_vec::{BitBlock, BitVec};
@@ -7,7 +9,6 @@ use itertools::Itertools;
 
 use crate::day14::Instruction::{UpdateMask, Write};
 use crate::{read_lines, ParseError};
-use std::marker::PhantomData;
 
 const BITS: usize = 36;
 
@@ -15,6 +16,23 @@ const BITS: usize = 36;
 struct Mask {
     ones: BitVec,
     zeroes: BitVec,
+}
+
+impl Display for Mask {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        for (one, zero) in self.ones.iter().zip(self.zeroes.iter()) {
+            write!(
+                f,
+                "{}",
+                match (one, zero) {
+                    (true, false) => "1",
+                    (false, true) => "0",
+                    _ => "X",
+                }
+            )?;
+        }
+        Ok(())
+    }
 }
 
 impl FromStr for Mask {
@@ -85,16 +103,15 @@ impl FromStr for Instruction {
     type Err = ParseError;
 
     fn from_str(input: &str) -> Result<Self, Self::Err> {
-        if input.starts_with("mask = ") {
-            return Ok(UpdateMask(input["mask = ".len()..].parse::<Mask>()?));
-        } else if input.starts_with("mem") {
-            if let Some(("mem", address, value)) = input.splitn(3, &['[', ']'][..]).collect_tuple()
-            {
-                return Ok(Write {
-                    value: value[" = ".len()..].parse::<Value>()?,
-                    address: address.parse::<Value>()?,
-                });
-            }
+        if let Some(mask) = input.strip_prefix("mask = ") {
+            return Ok(UpdateMask(mask.parse::<Mask>()?));
+        } else if let Some(("mem", address, value)) =
+            input.splitn(3, &['[', ']'][..]).collect_tuple()
+        {
+            return Ok(Write {
+                value: value[" = ".len()..].parse::<Value>()?,
+                address: address.parse::<Value>()?,
+            });
         }
         Err(ParseError::FormatError)
     }
@@ -114,15 +131,12 @@ impl<T: MemoryAccess> Computer<T> {
 
     fn execute_program(&mut self, program: &[Instruction]) {
         for instruction in program {
-            self.execute_instruction(instruction)
+            self.execute_instruction(instruction);
         }
     }
 
     fn sum_memory(&self) -> u64 {
-        self.memory
-            .values()
-            .map(|value| u64::from(value))
-            .sum::<u64>()
+        self.memory.values().map(u64::from).sum::<u64>()
     }
 }
 
@@ -157,10 +171,61 @@ fn read_program(input: &str) -> Result<Vec<Instruction>, ParseError> {
 }
 
 #[aoc(day14, part1)]
-fn execute_program(program: &[Instruction]) -> u64 {
+fn execute_program_with_value_masking(program: &[Instruction]) -> u64 {
     let mut computer: Computer<ValueMasking> = Computer::default();
     computer.execute_program(&program);
     computer.sum_memory()
+}
+
+#[aoc(day14, part2)]
+fn execute_program_with_address_decoder(program: &[Instruction]) -> u64 {
+    let mut computer: Computer<AddressDecoder> = Computer::default();
+    computer.execute_program(&program);
+    computer.sum_memory()
+}
+
+#[derive(Default)]
+struct AddressDecoder {}
+
+impl AddressDecoder {
+    fn floating_bits(mask: &Mask) -> BitVec {
+        let mut floating = mask.zeroes.clone();
+        floating.nor(&mask.ones);
+        floating
+    }
+
+    fn apply_floating_bits(mask: &Mask, address: &Value) -> Vec<Value> {
+        let floating = Self::floating_bits(mask)
+            .iter()
+            .enumerate()
+            .filter(|(_, value)| *value)
+            .map(|(index, _)| index)
+            .collect_vec();
+        let mut addresses = Vec::with_capacity(2usize.pow(floating.len() as u32));
+        addresses.push(address.clone());
+        for bit in floating {
+            for address in addresses.iter_mut() {
+                address.0.set(bit, true);
+            }
+            for index in 0..addresses.len() {
+                let mut address = addresses[index].clone();
+                address.0.set(bit, false);
+                addresses.push(address);
+            }
+        }
+
+        addresses
+    }
+}
+
+impl MemoryAccess for AddressDecoder {
+    fn store(memory: &mut Memory, mask: &Mask, address: &Value, value: &Value) {
+        let mut address = address.clone();
+        address.0.or(&mask.ones);
+        for address in Self::apply_floating_bits(mask, &address) {
+            memory.insert(address, value.clone());
+        }
+    }
 }
 
 #[cfg(test)]
@@ -198,7 +263,7 @@ mod should {
     #[test]
     fn solve_example_part1() {
         assert_eq!(
-            execute_program(
+            execute_program_with_value_masking(
                 &read_program(
                     "mask = XXXXXXXXXXXXXXXXXXXXXXXXXXXXX1XXXX0X
 mem[8] = 11
@@ -216,8 +281,34 @@ mem[8] = 0",
     #[test]
     fn solve_part1() {
         assert_eq!(
-            execute_program(&read_program(INPUT).expect("failed to read input")),
+            execute_program_with_value_masking(&read_program(INPUT).expect("failed to read input")),
             11884151942312
+        );
+    }
+
+    #[test]
+    fn solve_example_part2() {
+        assert_eq!(
+            execute_program_with_address_decoder(
+                &read_program(
+                    "mask = 000000000000000000000000000000X1001X
+mem[42] = 100
+mask = 00000000000000000000000000000000X0XX
+mem[26] = 1",
+                )
+                .expect("failed to parse example")
+            ),
+            208
+        );
+    }
+
+    #[test]
+    fn solve_part2() {
+        assert_eq!(
+            execute_program_with_address_decoder(
+                &read_program(INPUT).expect("failed to read input")
+            ),
+            2625449018811
         );
     }
 }
